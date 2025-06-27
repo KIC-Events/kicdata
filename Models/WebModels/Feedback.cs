@@ -4,14 +4,15 @@ namespace KiCData.Models.WebModels
 {
     public class Feedback
     {
-        [Required]
+        [Required(ErrorMessage = "This field is required.")]
         [Display(Name="What would you like us to know?")]
         public string? Text { get; set; }
 
-        [Display(Name = "Email Address (If you'd like a follow up.)")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+        [Display(Name = "Email Address")]
         public string? Email { get; set; }
 
-        [Display(Name="Name (If you'd like a follow up.)")]
+        [Display(Name="Name")]
         public string? Name { get; set; }
     }
 }

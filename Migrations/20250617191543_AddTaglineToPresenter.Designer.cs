@@ -4,6 +4,7 @@ using KiCData.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KiCData.Migrations
 {
     [DbContext(typeof(KiCdbContext))]
-    partial class KiCdbContextModelSnapshot : ModelSnapshot
+    [Migration("20250617191543_AddTaglineToPresenter")]
+    partial class AddTaglineToPresenter
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,7 +37,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("UsersId");
 
-                    b.ToTable("GroupUser", (string)null);
+                    b.ToTable("GroupUser");
                 });
 
             modelBuilder.Entity("KiCData.Models.Attendee", b =>
@@ -96,7 +99,7 @@ namespace KiCData.Migrations
                     b.HasIndex("TicketId")
                         .IsUnique();
 
-                    b.ToTable("Attendee", (string)null);
+                    b.ToTable("Attendee");
                 });
 
             modelBuilder.Entity("KiCData.Models.ClubMember", b =>
@@ -126,7 +129,7 @@ namespace KiCData.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ClubMember", (string)null);
+                    b.ToTable("ClubMember");
                 });
 
             modelBuilder.Entity("KiCData.Models.Event", b =>
@@ -165,7 +168,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("VenueId");
 
-                    b.ToTable("Event", (string)null);
+                    b.ToTable("Event");
                 });
 
             modelBuilder.Entity("KiCData.Models.EventVendor", b =>
@@ -194,7 +197,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("VendorId");
 
-                    b.ToTable("EventVendor", (string)null);
+                    b.ToTable("EventVendor");
                 });
 
             modelBuilder.Entity("KiCData.Models.EventVolunteer", b =>
@@ -226,7 +229,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("VolunteerId");
 
-                    b.ToTable("EventVolunteer", (string)null);
+                    b.ToTable("EventVolunteer");
                 });
 
             modelBuilder.Entity("KiCData.Models.Group", b =>
@@ -243,7 +246,7 @@ namespace KiCData.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Groups", (string)null);
+                    b.ToTable("Groups");
                 });
 
             modelBuilder.Entity("KiCData.Models.Member", b =>
@@ -306,7 +309,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("VendorId");
 
-                    b.ToTable("Member", (string)null);
+                    b.ToTable("Member");
                 });
 
             modelBuilder.Entity("KiCData.Models.PendingVolunteer", b =>
@@ -341,7 +344,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("EventId");
 
-                    b.ToTable("PendingVolunteers", (string)null);
+                    b.ToTable("PendingVolunteers");
                 });
 
             modelBuilder.Entity("KiCData.Models.Presentation", b =>
@@ -378,7 +381,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("PresenterId");
 
-                    b.ToTable("Presentation", (string)null);
+                    b.ToTable("Presentation");
                 });
 
             modelBuilder.Entity("KiCData.Models.Presenter", b =>
@@ -416,7 +419,7 @@ namespace KiCData.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Presenter", (string)null);
+                    b.ToTable("Presenter");
                 });
 
             modelBuilder.Entity("KiCData.Models.Staff", b =>
@@ -440,7 +443,7 @@ namespace KiCData.Migrations
                     b.HasIndex("MemberId")
                         .IsUnique();
 
-                    b.ToTable("Staff", (string)null);
+                    b.ToTable("Staff");
                 });
 
             modelBuilder.Entity("KiCData.Models.Ticket", b =>
@@ -476,7 +479,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("EventId");
 
-                    b.ToTable("Ticket", (string)null);
+                    b.ToTable("Ticket");
                 });
 
             modelBuilder.Entity("KiCData.Models.TicketComp", b =>
@@ -510,7 +513,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("TicketId");
 
-                    b.ToTable("TicketComp", (string)null);
+                    b.ToTable("TicketComp");
                 });
 
             modelBuilder.Entity("KiCData.Models.User", b =>
@@ -538,7 +541,7 @@ namespace KiCData.Migrations
                     b.HasIndex("MemberId")
                         .IsUnique();
 
-                    b.ToTable("User", (string)null);
+                    b.ToTable("User");
                 });
 
             modelBuilder.Entity("KiCData.Models.Vendor", b =>
@@ -577,7 +580,7 @@ namespace KiCData.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Vendor", (string)null);
+                    b.ToTable("Vendor");
                 });
 
             modelBuilder.Entity("KiCData.Models.Venue", b =>
@@ -612,7 +615,7 @@ namespace KiCData.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Venue", (string)null);
+                    b.ToTable("Venue");
                 });
 
             modelBuilder.Entity("KiCData.Models.Volunteer", b =>
@@ -637,7 +640,7 @@ namespace KiCData.Migrations
                     b.HasIndex("MemberId")
                         .IsUnique();
 
-                    b.ToTable("Volunteer", (string)null);
+                    b.ToTable("Volunteer");
                 });
 
             modelBuilder.Entity("KiCData.Models.WaitList", b =>
@@ -661,7 +664,7 @@ namespace KiCData.Migrations
 
                     b.HasIndex("AttendeeId");
 
-                    b.ToTable("WaitList", (string)null);
+                    b.ToTable("WaitList");
                 });
 
             modelBuilder.Entity("GroupUser", b =>

@@ -12,13 +12,15 @@ namespace KiCData.Models.WebModels
 {
     public class VolunteerViewModel : MemberViewModel
     {
-        [Required(ErrorMessage = "Please select at least one position you would like to volunteer for.")]
-        [Display(Name = "Position", Prompt = "Please select the positions you would like to volunteer for.")]
+        [Required(ErrorMessage = "Please select at least one position.")]
+        [Display(Name = "Position", Description = "Select one or more positions you would like to volunteer for.")]
         public List<SelectListItem>? Positions { get; set; }
 
         [Display(Name = "Additional Information", Prompt = "Please provide any additional information you would like us to know.")]
         public string? Details { get; set; }
-        [Display(Name = "Upcoming Events", Prompt = "Choose an upcoming event, leave blank to be added to our roster for upcoming events")]
+
+        [Required(ErrorMessage = "Please select an event.")]
+        [Display(Name = "Upcoming Events", Description = "Choose an upcoming event, leave blank to be added to our roster for upcoming events", Prompt = "Select an event")]
         public int EventId { get; set; }
 
         public List<SelectListItem>? Events { get; set; }
