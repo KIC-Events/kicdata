@@ -15,6 +15,9 @@ namespace KiCData.Models
         [Display(Name = @"The name we should use for you or your business in promotional materials.")]
         public string? PublicName { get; set; }
 
+        [Display(Name = @"A tagline or short description of you or your business.")]
+        public string? Tagline { get; set; }        
+
         [Display(Name = @"A short bio about you or your business.")]
         public string? Bio { get; set; }
 

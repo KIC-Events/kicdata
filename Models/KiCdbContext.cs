@@ -6,6 +6,7 @@ using KiCData.Models;
 using Microsoft.Extensions.Configuration;
 using System.Xml.Serialization;
 using MySqlConnector;
+using Microsoft.Extensions.Configuration;          
 
 namespace KiCData.Models
 {
@@ -36,7 +37,13 @@ namespace KiCData.Models
 
         public KiCdbContext(DbContextOptions<KiCdbContext> options) : base(options)
         {
-
+            if (_config == null)
+            {
+                _config = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                    .Build();
+            }
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
