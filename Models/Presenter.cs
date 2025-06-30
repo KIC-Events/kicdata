@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace KiCData.Models
 {
     [Table("Presenter")]
-    public class Presenter 
+    public class Presenter
     {
         [Key]
         //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -16,7 +16,7 @@ namespace KiCData.Models
         public string? PublicName { get; set; }
 
         [Display(Name = @"A tagline or short description of you or your business.")]
-        public string? Tagline { get; set; }        
+        public string? Tagline { get; set; }
 
         [Display(Name = @"A short bio about you or your business.")]
         public string? Bio { get; set; }
@@ -29,7 +29,14 @@ namespace KiCData.Models
         public string? Details { get; set; }
         public string? ImgPath { get; set; }
 
-        public ICollection<Member> Members { get; set; } = new List<Member>();
+        public Member? Member { get; set; }
+
+        [ForeignKey("Member")]
+        public int? MemberId { get; set; }
+        
+        public ICollection<Presentation> Presentations { get; set; } = new List<Presentation>();
+
+        public virtual ICollection<PresenterSocial> Socials { get; set; } = new List<PresenterSocial>();
 
     }
 }
