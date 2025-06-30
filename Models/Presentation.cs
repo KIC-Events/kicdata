@@ -26,8 +26,8 @@ namespace KiCData.Models
         [Display(Name = "To what kink or kinks does your class pertain?")]
         public string? Type { get; set; }
 
-        public int PresenterId { get; set; }
-        public virtual Presenter? Presenter { get; set; }
+        public ICollection<Presenter> Presenters { get; set; } = new List<Presenter>();
+
 
         public int EventId { get; set; }
         public virtual Event Event { get; set; }
