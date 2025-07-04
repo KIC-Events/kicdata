@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace KiCData.Models
 {
@@ -26,6 +27,7 @@ namespace KiCData.Models
         [Display(Name = "To what kink or kinks does your class pertain?")]
         public string? Type { get; set; }
 
+        [JsonIgnore]
         public ICollection<Presenter> Presenters { get; set; } = new List<Presenter>();
 
 

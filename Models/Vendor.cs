@@ -28,6 +28,12 @@ namespace KiCData.Models
         [Display(Name = "About your business.")]
         public string? Bio { get; set; }
 
+        [Display(Name = @"A tagline or short description of you or your business.")]
+        public string? Tagline { get; set; }
+
+        [Display(Name = "The website URL for your business.")]
+        public string? WebsiteUrl { get; set; }
+
         public DateOnly? LastAttended { get; set; }
 
         public string? MerchType { get; set; }

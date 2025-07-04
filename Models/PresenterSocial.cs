@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace KiCData.Models
 {
@@ -14,6 +15,7 @@ namespace KiCData.Models
 
       public int PresenterId { get; set; }
 
+      [JsonIgnore]
       public Presenter Presenter { get; set; } = default!;
   }
 }
