@@ -18,6 +18,7 @@ namespace KiCData.Models
         public DbSet<Volunteer> Volunteers { get; set; }
         public DbSet<Member> Members { get; set; }
         public DbSet<Event> Events { get; set; }
+        public DbSet<Sponsor> Sponsors { get; set; }
         public DbSet<Presenter> Presenters { get; set; }
         public DbSet<PresenterSocial> PresenterSocials { get; set; }
         public DbSet<Presentation> Presentations { get; set; }
