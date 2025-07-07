@@ -51,9 +51,6 @@ namespace KiCData.Models
         public Volunteer? Volunteer { get; set; }
         public Staff? Staff { get; set; }
 
-        public int? PresenterId { get; set; }
-        public Presenter? Presenter { get; set; }
-
         public User? User { get; set; }
         public Attendee? Attendee { get; set; }
 
