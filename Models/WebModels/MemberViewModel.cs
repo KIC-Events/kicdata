@@ -49,14 +49,25 @@ namespace KiCData.Models.WebModels
 	public class RegistrationViewModel : AttendeeViewModel
 	{
 		[Required]
-		[Display(Name = "Ticket Level")]
+		[Display(Name = "Ticket Type", Description = "Please select the type of ticket")]
 		public string? TicketType { get; set; }
 
 		public List<SelectListItem>? TicketTypes { get; set; }
 
+		[Required]
+		[Display(Name = "Select Room Type")]
 		public string? RoomType { get; set; }
 
 		public List<SelectListItem>? RoomTypes { get; set; }
+
+		[Required]
+		[Display(Name = "Arrival Day")]
+		public string? ArrivalDay { get; set; }
+
+		public List<SelectListItem>? ArrivalDays { get; set; }
+
+
+		public string? ArrivalDayOther { get; set; }
 
 		[Required]
 		[Display(Name = "Check this if you would like to reserve a room at the host hotel.")]
