@@ -1,5 +1,7 @@
 ﻿using KiCData.Models;
 using KiCData.Models.WebModels;
+using KiCData.Models.WebModels.PaymentModels;
+using KiCData.Models.WebModels.PurchaseModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Square;
@@ -17,10 +19,13 @@ namespace KiCData.Services
 {
     public class PaymentService : IPaymentService
     {
+        #region Setup
         private SquareClient _client;
         private IKiCLogger _logger;
+        private string _locationId;
+        private KiCdbContext _context;
 
-        public PaymentService(IConfigurationRoot configuration, IKiCLogger logger)
+        public PaymentService(IConfigurationRoot configuration, IKiCLogger logger, KiCdbContext context) // Initialize Square Client with configuration settings
         {
             Square.Environment env = Square.Environment.Production;
 
@@ -36,9 +41,17 @@ namespace KiCData.Services
                 )
                 .Environment(env)
                 .Build();
+                
             _logger = logger;
+            
+            _locationId = _client.LocationsApi.ListLocations().Locations.First().Id;
+            
+            _context = context;
         }
 
+        #endregion
+        
+        #region Inventory Methods
         public int CheckInventory(string objectSearchTerm, string variationSearchTerm)
         {
             int response = checkInventory(objectSearchTerm, variationSearchTerm);
@@ -80,7 +93,117 @@ namespace KiCData.Services
 
             return response;
         }
+        
+        #endregion
+        
+        #region Generic Payment Methods
+        
+        
+        public void CreateGenericPayment(string cardToken, BillingContact billingContact, List<IPurchaseModel> items)
+        {
+            double itemPrice = convertItemsToOrder(items);
+            createGenericPayment(cardToken, billingContact, itemPrice);
+        }
 
+        private void createGenericPayment(string cardToken, BillingContact billingContact, double price)
+        {
+            long amountInCents = (long)(price * 100); // Square API expects amount in cents
+            Money amountMoney = new Money.Builder()
+                .Amount(amountInCents)
+                .Currency("USD") // Assuming USD, change as necessary
+                .Build();
+            CreatePaymentRequest payment = new CreatePaymentRequest.Builder(sourceId: cardToken, idempotencyKey: Guid.NewGuid().ToString())
+                .AmountMoney(amountMoney)
+                .LocationId(_locationId)
+                .Build();
+                
+            var result = _client.PaymentsApi.CreatePayment(payment);
+        }
+        
+        private double convertItemsToOrder(List<IPurchaseModel> items)
+        {
+            double totalPrice = 0.0;
+            List<ITicketPurchaseModel> ticketItems = new List<ITicketPurchaseModel>();
+            List<IPurchaseModel> nonTicketItems = new List<IPurchaseModel>();
+            
+            foreach (var item in items)
+            {
+                totalPrice += item.Price;
+                if(item.Type.ToLower() == "ticket")
+                {
+                    ticketItems.Add((ITicketPurchaseModel)item);
+                }
+                else
+                {
+                    nonTicketItems.Add(item);
+                }
+            }
+            
+            if(ticketItems.Count > 0)
+            {
+                addTicketItemsToDataBase(ticketItems);
+            }
+            
+            if(nonTicketItems.Count > 0)
+            {
+                HandleOrderItems(nonTicketItems);
+            }
+            
+            return totalPrice;
+        }
+
+        private void addTicketItemsToDataBase(List<ITicketPurchaseModel> items)
+        {
+            foreach (var item in items)
+            {
+                Ticket ticket = new Ticket
+                {
+                    EventId = item.EventId,
+                    Price = item.Price,
+                    Type = item.Type,
+                    StartDate = item.StartDate,
+                    EndDate = item.EndDate,
+                    DatePurchased = DateOnly.FromDateTime(DateTime.Now),
+                    IsComped = false // Assuming tickets are not comped by default
+                };
+                
+                _context.Ticket.Add(ticket);
+            }
+            
+            _context.SaveChanges();
+        }
+        
+        private void HandleOrderItems(List<IPurchaseModel> items)
+        {
+        
+        }
+        
+        /// <summary>
+        /// Queries the Square Payment API to check the status of a payment.
+        /// </summary>
+        /// <param name="paymentId">The String ID of a payment.</param>
+        /// <returns>bool</returns>
+        public string CheckPaymentStatus(string paymentId)
+        {
+            return checkPaymentStatus(paymentId);
+        }
+        
+        private string checkPaymentStatus(string paymentId)
+        {
+            try
+            {
+                var response = _client.PaymentsApi.GetPayment(paymentId);
+                return response.Payment.Status.ToLower();
+            }
+            catch (Square.Exceptions.ApiException ex)
+            {
+                _logger.LogSquareEx(ex);
+                return "Error: " + ex.Message;
+            }
+        }
+        #endregion
+
+        #region CURE Payment Link Methods
         /*
          * 10-24-2024 194-add-ticket-purchase-for-blashphemy
          * https://github.com/Malechus/kic/issues/194
@@ -231,7 +354,10 @@ namespace KiCData.Services
 
             return paymentLink;
         }
+        
+        #endregion
 
+        #region Payment Link Methods
         /// <summary>
         /// Generates a dynamic Square payment link for the requested items.
         /// </summary>
@@ -340,5 +466,7 @@ namespace KiCData.Services
 
             return paymentLink;
         }
+        
+        #endregion
     }
 }
