@@ -15,6 +15,7 @@ namespace KiCData.Services
         public int CheckInventory(string objectSearchTerm, string variationSearchTerm);
         public void CreateGenericPayment(string cardToken, BillingContact billingContact, List<IPurchaseModel> items);
         public string CheckPaymentStatus(string paymentId);
+        public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items);
         public PaymentLink CreateCurePaymentLink(List<RegistrationViewModel> regList);
         public PaymentLink CreatePaymentLink(List<RegistrationViewModel> regList, KiCData.Models.Event kicEvent, string[] discountCodes = null, string redirectUrl = null);
         
