@@ -1,5 +1,6 @@
 ﻿using KiCData.Models;
 using KiCData.Models.WebModels;
+using KiCData.Models.WebModels.Member;
 using KiCData.Models.WebModels.PaymentModels;
 using KiCData.Models.WebModels.PurchaseModels;
 using Microsoft.Extensions.Configuration;
@@ -151,6 +152,18 @@ namespace KiCData.Services
             
             return totalPrice;
         }
+        
+        private double getTotalPrice(List<RegistrationViewModel> items)
+        {
+            double totalPrice = 0.0;
+            
+            foreach(RegistrationViewModel rvm in items)
+            {
+                totalPrice += rvm.Price;
+            }
+
+            return totalPrice;
+        }
 
         private void addTicketItemsToDataBase(List<ITicketPurchaseModel> items)
         {
@@ -171,6 +184,85 @@ namespace KiCData.Services
             }
             
             _context.SaveChanges();
+        }
+        
+        private void addTicketItemsToDataBase(List<RegistrationViewModel> items, string squareOrderID)
+        {
+            foreach(var item in items)
+            {
+                Member? member = _context.Members
+                    .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
+                    .FirstOrDefault();
+                    
+                if(member is null)
+                {
+                    member = new Member
+                    {
+                        FirstName = item.FirstName,
+                        LastName = item.LastName,
+                        Email = item.Email,
+                        DateOfBirth = item.DateOfBirth,
+                        FetName = item.FetName,
+                        ClubId = item.ClubId,
+                        PhoneNumber = item.PhoneNumber,
+                        PublicId = null,
+                        AdditionalInfo = null,
+                        SexOnID = item.SexOnID,
+                        City = item.City,
+                        State = item.State,
+                        VendorId = null,
+                        Vendor = null,
+                        Volunteer = null,
+                        Staff = null,
+                        User = null,
+                        Attendee = null,
+                    };
+
+                    _context.Members.Add(member);
+                    _context.SaveChanges();
+
+                    member = _context.Members
+                        .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
+                        .First();
+                }
+
+                Ticket ticket = new Ticket
+                {
+                    Event = item.Event,
+                    EventId = item.Event.Id,
+                    Price = item.Price,
+                    Type = item.TicketType,
+                    DatePurchased = DateOnly.FromDateTime(DateTime.Today),
+                    StartDate = item.Event.StartDate,
+                    EndDate = item.Event.EndDate,
+                    IsComped = false //handle comps                    
+                };
+
+                Attendee attendee = new Attendee
+                {
+                    Member = member,
+                    MemberId = member.Id,
+                    Ticket = ticket,
+                    BadgeName = item.BadgeName,
+                    BackgroundChecked = false,
+                    Pronouns = item.Pronouns,
+                    ConfirmationNumber = new Guid(),
+                    RoomWaitListed = item.WaitList,
+                    TicketWaitListed = item.WaitList,
+                    RoomPreference = item.RoomType,
+                    IsPaid = false,
+                    IsRefunded = false,
+                    isRegistered = false,
+                    OrderID = squareOrderID,
+                    PaymentLinkID = null
+                };
+
+                ticket.Attendee = attendee;
+
+                _context.Ticket.Add(ticket);
+                _context.Attendees.Add(attendee);
+                _context.SaveChanges();
+            }
         }
         
         private void HandleOrderItems(List<IPurchaseModel> items)
@@ -201,6 +293,38 @@ namespace KiCData.Services
                 return "Error: " + ex.Message;
             }
         }
+        #endregion
+
+        #region CURE Payment Methods
+        
+        public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items)
+        {
+            double itemPrice = getTotalPrice(items);
+            
+            var result = createCUREPayment(cardToken, billingContact, itemPrice);
+
+            addTicketItemsToDataBase(items, result.Payment.OrderId);
+
+            return result.Payment.Status;
+        }
+
+        private CreatePaymentResponse createCUREPayment(string cardToken, BillingContact billingContact, double price)
+        {
+            long amountInCents = (long)(price * 100); // Square API expects amount in cents
+            Money amountMoney = new Money.Builder()
+                .Amount(amountInCents)
+                .Currency("USD") // Assuming USD, change as necessary
+                .Build();
+            CreatePaymentRequest payment = new CreatePaymentRequest.Builder(sourceId: cardToken, idempotencyKey: Guid.NewGuid().ToString())
+                .AmountMoney(amountMoney)
+                .LocationId(_locationId)
+                .Build();
+                
+            var result = _client.PaymentsApi.CreatePayment(payment);
+
+            return result;
+        }
+        
         #endregion
 
         #region CURE Payment Link Methods

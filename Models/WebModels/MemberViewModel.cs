@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using KiCData.Models;
+using KiCData.Models.WebModels.PurchaseModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace KiCData.Models.WebModels
@@ -46,7 +47,7 @@ namespace KiCData.Models.WebModels
 		public string? SexOnID { get; set; }
 	}
 
-	public class RegistrationViewModel : AttendeeViewModel
+	public class RegistrationViewModel : AttendeeViewModel, IPurchaseModel
 	{
 		[Required]
 		[Display(Name = "Ticket Type", Description = "Please select the type of ticket")]
@@ -101,7 +102,9 @@ namespace KiCData.Models.WebModels
 
 		public Event? Event { get; set; }
 
-		public int? Price { get; set; }
+		public double Price { get; set; }
+		
+		public string Type { get; set; } = "Ticket";
 	}
 
 	public class VolunteerPositionSelection
