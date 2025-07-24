@@ -27,7 +27,7 @@ namespace KiCData.Models
 
         public bool BackgroundChecked { get; set; }
 
-        public Guid ConfirmationNumber { get; set; }
+        public int ConfirmationNumber { get; set; }
         public bool RoomWaitListed { get; set; }
         public bool TicketWaitListed { get; set; }
         public string? RoomPreference { get; set; }

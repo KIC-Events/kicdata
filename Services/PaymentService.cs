@@ -246,7 +246,7 @@ namespace KiCData.Services
                     BadgeName = item.BadgeName,
                     BackgroundChecked = false,
                     Pronouns = item.Pronouns,
-                    ConfirmationNumber = new Guid(),
+                    ConfirmationNumber = item.BadgeName.GetHashCode(),
                     RoomWaitListed = item.WaitList,
                     TicketWaitListed = item.WaitList,
                     RoomPreference = item.RoomType,
