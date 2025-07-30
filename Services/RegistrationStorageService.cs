@@ -1,56 +1,51 @@
-using System.Web;
+using System.Text.Json;
 using KiCData.Models.WebModels;
-using KiCData.Models.WebModels.PaymentModels;
+using Microsoft.AspNetCore.Http;
 
 namespace KiCData.Services
 {
     /// <summary>
     /// Service for handling storage-related operations.
     /// </summary>
-    public class RegistrationStorageService
+    public class RegistrationSessionService
     {
-        public List<RegistrationStorage> Storage { get; set; }
-        
-        public RegistrationStorageService()
+        private const string SessionKey = "Registrations";
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public RegistrationSessionService(IHttpContextAccessor httpContextAccessor)
         {
-            Storage = new List<RegistrationStorage>();
+            _httpContextAccessor = httpContextAccessor;
         }
-        
-        
-    }
-    
-    public class RegistrationStorage
-    {
-        public string? SessionID{ get; set; }
-        public List<RegistrationViewModel> Registrations { get; set; }
-        
-        public RegistrationStorage(string sessionId, List<RegistrationViewModel> registrations)
+
+        public List<RegistrationViewModel> Registrations
         {
-            SessionID = sessionId;
-            Registrations = registrations;
+            get
+            {
+                var session = _httpContextAccessor.HttpContext?.Session;
+                if (session == null) return new List<RegistrationViewModel>();
+
+                var json = session.GetString(SessionKey);
+                return string.IsNullOrEmpty(json)
+                    ? new List<RegistrationViewModel>()
+                    : JsonSerializer.Deserialize<List<RegistrationViewModel>>(json) ?? new List<RegistrationViewModel>();
+            }
+            set
+            {
+                var session = _httpContextAccessor.HttpContext?.Session;
+                if (session == null) return;
+
+                var json = JsonSerializer.Serialize(value);
+                session.SetString(SessionKey, json);
+            }
         }
-        
-        public RegistrationStorage(string sessionId)
-        {
-            SessionID = sessionId;
-            Registrations = new List<RegistrationViewModel>();
-        }
-        
-        public RegistrationStorage(List<RegistrationViewModel> registrations)
-        {
-            SessionID = null;
-            Registrations = registrations;
-        }
-        
-        public RegistrationStorage()
-        {
-            SessionID = null;
-            Registrations = new List<RegistrationViewModel>();
-        }
-        
+
+        public void Clear() => _httpContextAccessor.HttpContext?.Session.Remove(SessionKey);
+
         public bool IsEmpty()
         {
-            return Registrations == null || Registrations.Count == 0;
+            var regs = Registrations;
+            return regs == null || regs.Count == 0;
         }
     }
+    
 }
