@@ -78,9 +78,12 @@ namespace KiCData.Models.WebModels
 		[Display(Name = "Check here if you are interested in volunteering at the event.")]
 		public bool WillVolunteer = false;
 
-		[Required]
-		[Display(Name = "Re-enter your email address to confirm.")]
-		public string EmailConf { get; set; }
+		[Required(ErrorMessage = "Please confirm your email address.")]
+    [Compare(nameof(Email), ErrorMessage = "Email addresses must match.")]
+    [Display(Name = "Confirm Email",
+             Description = "Re-enter your email to confirm.",
+             Prompt = "you@example.com")]
+    public string? EmailConf { get; set; }
 
 		public bool CreateMore { get; set; }
 
