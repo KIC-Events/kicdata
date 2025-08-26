@@ -8,6 +8,9 @@ using KiCData.Models.WebModels.Member;
 using System.Security.Cryptography;
 using System.Text;
 using System.Runtime.Intrinsics.Arm;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 
 namespace KiCData.Services
 {
@@ -35,6 +38,20 @@ namespace KiCData.Services
 			string result = Convert.ToBase64String(hash);
 
 			return result;
+		}
+		
+		public void GiveRoles(WebUser user, HttpContextAccessor httpContextAccessor)
+		{
+			AspNetUserManager<User> managedUser = new AspNetUserManager<User>();
+			
+			managedUser.
+		}
+		
+		public bool HasPriv(HttpContextAccessor httpContextAccessor)
+		{
+			httpContextAccessor.HttpContext.User.IsInRole
+			
+			return false;
 		}
 	}
 }
