@@ -6,9 +6,19 @@ namespace KiCData.Models.WebModels.PaymentModels
     
     public class BillingContact
     {
+        [Required]
+        [Display(Name = "Address Line 1")]
         public string AddressLine1 { get; set; }
-        public string AddressLine2{ get; set; }
-        public string FamilyName{ get; set; }
+
+        [Display(Name = "Address Line 2")]
+        public string AddressLine2 { get; set; }
+
+        [Required]
+        [Display(Name = "Last Name")]
+        public string FamilyName { get; set; }
+
+        [Required]
+        [Display(Name = "First Name")]
         public string GivenName { get; set; }
 
         [Required]
