@@ -188,13 +188,17 @@ namespace KiCData.Services
         
         private void addTicketItemsToDataBase(List<RegistrationViewModel> items, string squareOrderID)
         {
-            foreach(var item in items)
+            Console.WriteLine("Adding ticket items to database for order ID: " + squareOrderID);
+            Console.WriteLine("Items: ");
+            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(items));
+            
+            foreach (var item in items)
             {
                 Member? member = _context.Members
                     .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
                     .FirstOrDefault();
-                    
-                if(member is null)
+
+                if (member is null)
                 {
                     member = new Member
                     {
@@ -225,6 +229,9 @@ namespace KiCData.Services
                         .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
                         .First();
                 }
+
+                Console.WriteLine("Ticket item: ");
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(item));
 
                 Ticket ticket = new Ticket
                 {
@@ -299,28 +306,59 @@ namespace KiCData.Services
         
         public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items)
         {
+            Console.WriteLine("CreateCUREPayment flag 1");
+            Console.WriteLine("Creating CURE Payment for " + items.Count + " items.");
             double itemPrice = getTotalPrice(items);
             
+            Console.WriteLine("CreateCUREPayment flag 2");
+
             var result = createCUREPayment(cardToken, billingContact, itemPrice);
 
+            Console.WriteLine("CreateCUREPayment flag 3");
+
+            Console.WriteLine("Sending items: ");
+            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(items));
+
+            Console.WriteLine("Sending payment result: ");
+            if (result == null)
+            {
+                Console.WriteLine("Result is null");
+            }
+            else
+            {
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result.Payment));
+            }
+
             addTicketItemsToDataBase(items, result.Payment.OrderId);
+
+            Console.WriteLine("CreateCUREPayment flag 4");
 
             return result.Payment.Status;
         }
 
         private CreatePaymentResponse createCUREPayment(string cardToken, BillingContact billingContact, double price)
         {
+            Console.WriteLine("createCUREPayment flag 1");
+            Console.WriteLine("Values passed in: " + cardToken + " " + billingContact.EmailAddress + " " + price);
             long amountInCents = (long)(price * 100); // Square API expects amount in cents
             Money amountMoney = new Money.Builder()
                 .Amount(amountInCents)
                 .Currency("USD") // Assuming USD, change as necessary
                 .Build();
+
+            Console.WriteLine("createCUREPayment flag 2");
+            Console.WriteLine("Amount in cents: " + amountInCents);
+
             CreatePaymentRequest payment = new CreatePaymentRequest.Builder(sourceId: cardToken, idempotencyKey: Guid.NewGuid().ToString())
                 .AmountMoney(amountMoney)
                 .LocationId(_locationId)
                 .Build();
+
+            Console.WriteLine("createCUREPayment flag 3");
+            Console.WriteLine("Payment request built. Calling PaymentsApi.CreatePayment...");
+            Console.WriteLine("payment json: " + System.Text.Json.JsonSerializer.Serialize(payment));
                 
-            var result = _client.PaymentsApi.CreatePayment(payment);
+            CreatePaymentResponse result = _client.PaymentsApi.CreatePayment(payment);
 
             return result;
         }
