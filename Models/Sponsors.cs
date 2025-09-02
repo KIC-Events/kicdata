@@ -25,5 +25,9 @@ namespace KiCData.Models
 
     [Display(Name = "The website URL for your business.")]
     public string? WebsiteUrl { get; set; }
+    
+    public int EventId { get; set; }
+    
+    public virtual Event? Event { get; set; }
     }
 }
