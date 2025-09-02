@@ -95,11 +95,62 @@ namespace KiCData.Services
             return response;
         }
         
+        public List<TicketInventory> GetTicketInventory(string objectSearchTerm)
+        {
+            List<TicketInventory> response = getTicketInventory(objectSearchTerm);
+            return response;
+        }
+
+        private List<TicketInventory> getTicketInventory(string objectSearchTerm)
+        {
+            List<TicketInventory> inventory = new List<TicketInventory>();
+
+            ListCatalogResponse catResponse = _client.CatalogApi.ListCatalog();
+            List<CatalogObject> objs = catResponse.Objects
+                .Where(o => o.Type == "ITEM" && o.ItemData?.Name.Contains(objectSearchTerm) == true)
+                .ToList();
+
+            if (objs == null || objs.Count == 0)
+            {
+                throw new Exception("Object not found.");
+            }
+
+            foreach(CatalogObject obj in objs)
+            {
+                foreach(CatalogObject variation in obj.ItemData.Variations)
+                {
+                    string varId = variation.Id;
+
+                    RetrieveInventoryCountResponse countResponse = _client.InventoryApi.RetrieveInventoryCount(varId);
+
+                    int QuantityAvailable = 0;
+                    if (countResponse.Counts != null)
+                    {
+                        InventoryCount count = countResponse.Counts.FirstOrDefault();
+                        QuantityAvailable = int.Parse(count.Quantity);
+                        throw new Exception("No count for " + variation.ItemVariationData.Name + " found.");
+                    }
+
+                    TicketInventory ti = new TicketInventory
+                    {
+                        SquareId = variation.Id,
+                        Name = variation.ItemVariationData.Name,
+                        Price = (variation.ItemVariationData.PriceMoney.Amount ?? 0) / 100.0,
+                        QuantityAvailable = QuantityAvailable
+                    };
+
+                    inventory.Add(ti);
+                }
+            }
+
+            return inventory;
+        }
+        
         #endregion
-        
+
         #region Generic Payment Methods
-        
-        
+
+
         public void CreateGenericPayment(string cardToken, BillingContact billingContact, List<IPurchaseModel> items)
         {
             double itemPrice = convertItemsToOrder(items);
