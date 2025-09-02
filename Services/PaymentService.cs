@@ -159,7 +159,15 @@ namespace KiCData.Services
             
             foreach(RegistrationViewModel rvm in items)
             {
-                totalPrice += rvm.Price;
+                double price = rvm.Price;
+                
+                if(rvm.TicketComp is not null)
+                {
+                    double compAmt = rvm.TicketComp.CompAmount ?? 0.0;
+                    price = price - compAmt;
+                }
+                
+                totalPrice += price;
             }
 
             return totalPrice;
@@ -242,8 +250,10 @@ namespace KiCData.Services
                     DatePurchased = DateOnly.FromDateTime(DateTime.Today),
                     StartDate = item.Event.StartDate,
                     EndDate = item.Event.EndDate,
-                    IsComped = false //handle comps                    
+                    IsComped = false                  
                 };
+
+                if (item.TicketComp is not null) ticket.IsComped = true;
 
                 Attendee attendee = new Attendee
                 {
