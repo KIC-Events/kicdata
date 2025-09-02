@@ -1,4 +1,4 @@
-
+using System.ComponentModel.DataAnnotations;
 
 namespace KiCData.Models.WebModels.PaymentModels
 {
@@ -10,11 +10,20 @@ namespace KiCData.Models.WebModels.PaymentModels
         public string AddressLine2{ get; set; }
         public string FamilyName{ get; set; }
         public string GivenName { get; set; }
+
+        [Required]
+        [Display(Name = "Email")]
+        [EmailAddress]
         public string EmailAddress { get; set; }
         public string CountryCode { get; set; }
+
+        [Required]
+        [Display(Name = "Phone Number")]
         public string PhoneNumber { get; set; }
         public string State { get; set; }
         public string City { get; set; }
+
+        [Display(Name = "Zip")]
         public string PostalCode { get; set; }
         
         public BillingContact(string addressLine1, string addressLine2, string familyName, string givenName, string emailAddress, string countryCode, string phoneNumber, string state, string city, string postalCode)
