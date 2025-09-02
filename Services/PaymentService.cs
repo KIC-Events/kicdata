@@ -95,11 +95,62 @@ namespace KiCData.Services
             return response;
         }
         
+        public List<TicketInventory> GetTicketInventory(string objectSearchTerm)
+        {
+            List<TicketInventory> response = getTicketInventory(objectSearchTerm);
+            return response;
+        }
+
+        private List<TicketInventory> getTicketInventory(string objectSearchTerm)
+        {
+            List<TicketInventory> inventory = new List<TicketInventory>();
+
+            ListCatalogResponse catResponse = _client.CatalogApi.ListCatalog();
+            List<CatalogObject> objs = catResponse.Objects
+                .Where(o => o.Type == "ITEM" && o.ItemData?.Name.Contains(objectSearchTerm) == true)
+                .ToList();
+
+            if (objs == null || objs.Count == 0)
+            {
+                throw new Exception("Object not found.");
+            }
+
+            foreach(CatalogObject obj in objs)
+            {
+                foreach(CatalogObject variation in obj.ItemData.Variations)
+                {
+                    string varId = variation.Id;
+
+                    RetrieveInventoryCountResponse countResponse = _client.InventoryApi.RetrieveInventoryCount(varId);
+
+                    int QuantityAvailable = 0;
+                    if (countResponse.Counts != null)
+                    {
+                        InventoryCount count = countResponse.Counts.FirstOrDefault();
+                        QuantityAvailable = int.Parse(count.Quantity);
+                        throw new Exception("No count for " + variation.ItemVariationData.Name + " found.");
+                    }
+
+                    TicketInventory ti = new TicketInventory
+                    {
+                        SquareId = variation.Id,
+                        Name = variation.ItemVariationData.Name,
+                        Price = (variation.ItemVariationData.PriceMoney.Amount ?? 0) / 100.0,
+                        QuantityAvailable = QuantityAvailable
+                    };
+
+                    inventory.Add(ti);
+                }
+            }
+
+            return inventory;
+        }
+        
         #endregion
-        
+
         #region Generic Payment Methods
-        
-        
+
+
         public void CreateGenericPayment(string cardToken, BillingContact billingContact, List<IPurchaseModel> items)
         {
             double itemPrice = convertItemsToOrder(items);
@@ -159,7 +210,15 @@ namespace KiCData.Services
             
             foreach(RegistrationViewModel rvm in items)
             {
-                totalPrice += rvm.Price;
+                double price = rvm.Price;
+                
+                if(rvm.TicketComp is not null)
+                {
+                    double compAmt = rvm.TicketComp.CompAmount ?? 0.0;
+                    price = price - compAmt;
+                }
+                
+                totalPrice += price;
             }
 
             return totalPrice;
@@ -188,13 +247,17 @@ namespace KiCData.Services
         
         private void addTicketItemsToDataBase(List<RegistrationViewModel> items, string squareOrderID)
         {
-            foreach(var item in items)
+            Console.WriteLine("Adding ticket items to database for order ID: " + squareOrderID);
+            Console.WriteLine("Items: ");
+            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(items));
+            
+            foreach (var item in items)
             {
                 Member? member = _context.Members
                     .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
                     .FirstOrDefault();
-                    
-                if(member is null)
+
+                if (member is null)
                 {
                     member = new Member
                     {
@@ -226,6 +289,9 @@ namespace KiCData.Services
                         .First();
                 }
 
+                Console.WriteLine("Ticket item: ");
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(item));
+
                 Ticket ticket = new Ticket
                 {
                     Event = item.Event,
@@ -235,8 +301,10 @@ namespace KiCData.Services
                     DatePurchased = DateOnly.FromDateTime(DateTime.Today),
                     StartDate = item.Event.StartDate,
                     EndDate = item.Event.EndDate,
-                    IsComped = false //handle comps                    
+                    IsComped = false                  
                 };
+
+                if (item.TicketComp is not null) ticket.IsComped = true;
 
                 Attendee attendee = new Attendee
                 {
@@ -299,28 +367,59 @@ namespace KiCData.Services
         
         public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items)
         {
+            Console.WriteLine("CreateCUREPayment flag 1");
+            Console.WriteLine("Creating CURE Payment for " + items.Count + " items.");
             double itemPrice = getTotalPrice(items);
             
+            Console.WriteLine("CreateCUREPayment flag 2");
+
             var result = createCUREPayment(cardToken, billingContact, itemPrice);
 
+            Console.WriteLine("CreateCUREPayment flag 3");
+
+            Console.WriteLine("Sending items: ");
+            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(items));
+
+            Console.WriteLine("Sending payment result: ");
+            if (result == null)
+            {
+                Console.WriteLine("Result is null");
+            }
+            else
+            {
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result.Payment));
+            }
+
             addTicketItemsToDataBase(items, result.Payment.OrderId);
+
+            Console.WriteLine("CreateCUREPayment flag 4");
 
             return result.Payment.Status;
         }
 
         private CreatePaymentResponse createCUREPayment(string cardToken, BillingContact billingContact, double price)
         {
+            Console.WriteLine("createCUREPayment flag 1");
+            Console.WriteLine("Values passed in: " + cardToken + " " + billingContact.EmailAddress + " " + price);
             long amountInCents = (long)(price * 100); // Square API expects amount in cents
             Money amountMoney = new Money.Builder()
                 .Amount(amountInCents)
                 .Currency("USD") // Assuming USD, change as necessary
                 .Build();
+
+            Console.WriteLine("createCUREPayment flag 2");
+            Console.WriteLine("Amount in cents: " + amountInCents);
+
             CreatePaymentRequest payment = new CreatePaymentRequest.Builder(sourceId: cardToken, idempotencyKey: Guid.NewGuid().ToString())
                 .AmountMoney(amountMoney)
                 .LocationId(_locationId)
                 .Build();
+
+            Console.WriteLine("createCUREPayment flag 3");
+            Console.WriteLine("Payment request built. Calling PaymentsApi.CreatePayment...");
+            Console.WriteLine("payment json: " + System.Text.Json.JsonSerializer.Serialize(payment));
                 
-            var result = _client.PaymentsApi.CreatePayment(payment);
+            CreatePaymentResponse result = _client.PaymentsApi.CreatePayment(payment);
 
             return result;
         }
