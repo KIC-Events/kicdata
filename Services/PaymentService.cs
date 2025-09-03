@@ -247,7 +247,34 @@ namespace KiCData.Services
             }
         }
         
+        public Task ReduceAddonInventoryAsync(List<TicketAddon> ticketAddons)
+        {
+            return Task.Run(() => ReduceAddonInventory(ticketAddons));
+        }
         
+        private async void ReduceAddonInventory(List<TicketAddon> ticketAddons)
+        {
+            int count = 0;
+            
+            foreach(TicketAddon addon in ticketAddons)
+            {
+                count++;
+            }
+
+            InventoryAdjustment inventoryAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", locationId: _config["Square:LocationID"], catalogObjectId: _config["Square:Items:Delight"], quantity: count.ToString(), occurredAt: DateTime.UtcNow.ToString());
+            
+            InventoryChange inventoryChange = new InventoryChange(type: "ADJUSTMENT", adjustment: inventoryAdjustment);
+
+            string idempotencyKey = Guid.NewGuid().ToString();
+            List<InventoryChange> changes = new List<InventoryChange>() { inventoryChange };
+            BatchChangeInventoryRequest batchChangeInventoryRequest = new BatchChangeInventoryRequest(idempotencyKey, changes);
+            BatchChangeInventoryResponse response = await Task.Run(() => _client.InventoryApi.BatchChangeInventory(batchChangeInventoryRequest));
+            
+            if(response.Errors is not null)
+            {
+                throw new InvalidDataException();
+            }
+        }
         #endregion
 
         #region Generic Payment Methods
