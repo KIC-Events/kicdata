@@ -146,6 +146,18 @@ namespace KiCData.Services
             return inventory;
         }
         
+        public double GetTicketPrice(string objectSearchTerm)
+        {
+            return getTicketPrice(objectSearchTerm);
+        }
+        
+        private double getTicketPrice(string objectSearchTerm)
+        {
+            CatalogObject catObj = _client.CatalogApi.ListCatalog().Objects.Where(o => o.Type == "ITEM_VARIATION" && o.ItemVariationData.Name == objectSearchTerm).First();
+
+            return (double)catObj.ItemVariationData.PriceMoney.Amount;
+        }
+        
         #endregion
 
         #region Generic Payment Methods

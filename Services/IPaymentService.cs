@@ -19,7 +19,7 @@ namespace KiCData.Services
         public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items);
         public PaymentLink CreateCurePaymentLink(List<RegistrationViewModel> regList);
         public PaymentLink CreatePaymentLink(List<RegistrationViewModel> regList, KiCData.Models.Event kicEvent, string[] discountCodes = null, string redirectUrl = null);
-        
+        public double GetTicketPrice(string objectSearchTerm);
         
     }
 }
