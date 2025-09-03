@@ -49,7 +49,7 @@ namespace KiCData.Models.WebModels
 
 	public class RegistrationViewModel : AttendeeViewModel, IPurchaseModel
 	{
-    public Guid RegId { get; set; }
+    public Guid? RegId { get; set; }
 		
 		[Required]
 		[Display(Name = "Ticket Type", Description = "Please select the type of ticket")]
