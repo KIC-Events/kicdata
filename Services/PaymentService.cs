@@ -3,8 +3,11 @@ using KiCData.Models.WebModels;
 using KiCData.Models.WebModels.Member;
 using KiCData.Models.WebModels.PaymentModels;
 using KiCData.Models.WebModels.PurchaseModels;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Asn1.Ocsp;
 using Square;
 using Square.Authentication;
 using Square.Models;
@@ -25,6 +28,7 @@ namespace KiCData.Services
         private IKiCLogger _logger;
         private string _locationId;
         private KiCdbContext _context;
+        private IConfigurationRoot _config;
 
         public PaymentService(IConfigurationRoot configuration, IKiCLogger logger, KiCdbContext context) // Initialize Square Client with configuration settings
         {
@@ -48,6 +52,8 @@ namespace KiCData.Services
             _locationId = _client.LocationsApi.ListLocations().Locations.First().Id;
             
             _context = context;
+
+            _config = configuration;
         }
 
         #endregion
@@ -128,6 +134,9 @@ namespace KiCData.Services
                     {
                         InventoryCount count = countResponse.Counts.FirstOrDefault();
                         QuantityAvailable = int.Parse(count.Quantity);
+                    }
+                    else
+                    {                        
                         throw new Exception("No count for " + variation.ItemVariationData.Name + " found.");
                     }
 
@@ -153,10 +162,91 @@ namespace KiCData.Services
         
         private double getTicketPrice(string objectSearchTerm)
         {
-            CatalogObject catObj = _client.CatalogApi.ListCatalog().Objects.Where(o => o.Type == "ITEM_VARIATION" && o.ItemVariationData.Name == objectSearchTerm).First();
+            List<CatalogObject> catalogObjects = _client.CatalogApi.ListCatalog().Objects.ToList();
+            CatalogObject catObj = catalogObjects.Where(o => o.ItemData.Name == "CURE 2026").First();
+            CatalogObject variationObj = catObj.ItemData.Variations.Where(v => v.ItemVariationData.Name == objectSearchTerm).First();
 
-            return (double)catObj.ItemVariationData.PriceMoney.Amount;
+            return (double)variationObj.ItemVariationData.PriceMoney.Amount;
         }
+        
+        public Task ReduceTicketInventoryAsync(List<RegistrationViewModel> registrationViewModels)
+        {
+            return Task.Run(() => ReduceTicketInventory(registrationViewModels));
+        }
+        
+        private async void ReduceTicketInventory(List<RegistrationViewModel> registrationViewModels)
+        {
+            int goldCount = 0;
+            int silverCount = 0;
+            int suiteCount = 0;
+            int standardCount = 0;
+            
+            foreach(RegistrationViewModel rvm in registrationViewModels)
+            {
+                switch(rvm.TicketType)
+                {
+                    case "Gold":
+                        goldCount++;
+                        break;
+                    case "Silver":
+                        silverCount++;
+                        break;
+                    case "Sweet It's a Suite":
+                        suiteCount++;
+                        break;
+                    case "Standard":
+                        standardCount++;
+                        break;
+                    default:
+                        break;    
+                }
+            }
+
+            string idempotencyKey = Guid.NewGuid().ToString();
+
+            List<InventoryChange> changes = new List<InventoryChange>();
+            
+            if(goldCount > 0)
+            {
+                InventoryAdjustment goldAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:GoldTicket"], quantity: goldCount.ToString(), occurredAt: DateTime.UtcNow.ToString());
+                InventoryChange goldChange = new InventoryChange(type: "ADJUSTMENT", adjustment: goldAdjustment);
+
+                changes.Add(goldChange);
+            }
+            
+            if(silverCount > 0)
+            {
+                InventoryAdjustment silverAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:SilverTicket"], quantity: silverCount.ToString(), occurredAt: DateTime.UtcNow.ToString());
+                InventoryChange silverChange = new InventoryChange(type: "ADJUSTMENT", adjustment: silverAdjustment);
+
+                changes.Add(silverChange);
+            }
+            
+            if(suiteCount > 0)
+            {
+                InventoryAdjustment suiteAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:GoldTicket"], quantity: suiteCount.ToString(), occurredAt: DateTime.UtcNow.ToString());
+                InventoryChange suiteChange = new InventoryChange(type: "ADJUSTMENT", adjustment: suiteAdjustment);
+
+                changes.Add(suiteChange);
+            }
+            
+            if(standardCount > 0)
+            {
+                InventoryAdjustment standardAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:GoldTicket"], quantity: standardCount.ToString(), occurredAt: DateTime.UtcNow.ToString());
+                InventoryChange standardChange = new InventoryChange(type: "ADJUSTMENT", adjustment: standardAdjustment);
+
+                changes.Add(standardChange);
+            }
+
+            BatchChangeInventoryRequest batchChangeInventoryRequest = new BatchChangeInventoryRequest(idempotencyKey, changes);
+            BatchChangeInventoryResponse response = await Task.Run(() => _client.InventoryApi.BatchChangeInventory(batchChangeInventoryRequest));
+            
+            if(response.Errors is not null)
+            {
+                throw new InvalidDataException();
+            }
+        }
+        
         
         #endregion
 
@@ -248,8 +338,10 @@ namespace KiCData.Services
                     StartDate = item.StartDate,
                     EndDate = item.EndDate,
                     DatePurchased = DateOnly.FromDateTime(DateTime.Now),
-                    IsComped = false // Assuming tickets are not comped by default
+                    IsComped = false
                 };
+                
+                if(item.)
                 
                 _context.Ticket.Add(ticket);
             }
@@ -259,9 +351,6 @@ namespace KiCData.Services
         
         private void addTicketItemsToDataBase(List<RegistrationViewModel> items, string squareOrderID)
         {
-            Console.WriteLine("Adding ticket items to database for order ID: " + squareOrderID);
-            Console.WriteLine("Items: ");
-            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(items));
             
             foreach (var item in items)
             {
@@ -300,9 +389,6 @@ namespace KiCData.Services
                         .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
                         .First();
                 }
-
-                Console.WriteLine("Ticket item: ");
-                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(item));
 
                 Ticket ticket = new Ticket
                 {
@@ -379,57 +465,29 @@ namespace KiCData.Services
         
         public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items)
         {
-            Console.WriteLine("CreateCUREPayment flag 1");
-            Console.WriteLine("Creating CURE Payment for " + items.Count + " items.");
             double itemPrice = getTotalPrice(items);
-            
-            Console.WriteLine("CreateCUREPayment flag 2");
 
             var result = createCUREPayment(cardToken, billingContact, itemPrice);
 
-            Console.WriteLine("CreateCUREPayment flag 3");
-
-            Console.WriteLine("Sending items: ");
-            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(items));
-
-            Console.WriteLine("Sending payment result: ");
-            if (result == null)
-            {
-                Console.WriteLine("Result is null");
-            }
-            else
-            {
-                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result.Payment));
-            }
-
             addTicketItemsToDataBase(items, result.Payment.OrderId);
-
-            Console.WriteLine("CreateCUREPayment flag 4");
 
             return result.Payment.Status;
         }
 
         private CreatePaymentResponse createCUREPayment(string cardToken, BillingContact billingContact, double price)
         {
-            Console.WriteLine("createCUREPayment flag 1");
-            Console.WriteLine("Values passed in: " + cardToken + " " + billingContact.EmailAddress + " " + price);
             long amountInCents = (long)(price * 100); // Square API expects amount in cents
             Money amountMoney = new Money.Builder()
                 .Amount(amountInCents)
                 .Currency("USD") // Assuming USD, change as necessary
                 .Build();
 
-            Console.WriteLine("createCUREPayment flag 2");
-            Console.WriteLine("Amount in cents: " + amountInCents);
 
             CreatePaymentRequest payment = new CreatePaymentRequest.Builder(sourceId: cardToken, idempotencyKey: Guid.NewGuid().ToString())
                 .AmountMoney(amountMoney)
                 .LocationId(_locationId)
                 .Build();
 
-            Console.WriteLine("createCUREPayment flag 3");
-            Console.WriteLine("Payment request built. Calling PaymentsApi.CreatePayment...");
-            Console.WriteLine("payment json: " + System.Text.Json.JsonSerializer.Serialize(payment));
                 
             CreatePaymentResponse result = _client.PaymentsApi.CreatePayment(payment);
 
