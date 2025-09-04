@@ -1,6 +1,6 @@
 namespace KiCData.Models.WebModels
 {
-  public class TicketInventory
+  public class ItemInventory
   {
 
     public string SquareId { get; set; }

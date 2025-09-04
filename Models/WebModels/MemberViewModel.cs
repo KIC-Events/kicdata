@@ -49,7 +49,7 @@ namespace KiCData.Models.WebModels
 
 	public class RegistrationViewModel : AttendeeViewModel, IPurchaseModel
 	{
-    public Guid RegId { get; set; }
+    	public Guid RegId { get; set; }
 		
 		[Required]
 		[Display(Name = "Ticket Type", Description = "Please select the type of ticket")]
@@ -83,11 +83,11 @@ namespace KiCData.Models.WebModels
 		public bool WillVolunteer = false;
 
 		[Required(ErrorMessage = "Please confirm your email address.")]
-    [Compare(nameof(Email), ErrorMessage = "Email addresses must match.")]
-    [Display(Name = "Confirm Email",
+    	[Compare(nameof(Email), ErrorMessage = "Email addresses must match.")]
+    	[Display(Name = "Confirm Email",
              Description = "Re-enter your email to confirm.",
              Prompt = "you@example.com")]
-    public string? EmailConf { get; set; }
+    	public string? EmailConf { get; set; }
 
 		public bool CreateMore { get; set; }
 
@@ -112,6 +112,12 @@ namespace KiCData.Models.WebModels
 		public double Price { get; set; }
 		
 		public string Type { get; set; } = "Ticket";
+		
+		public bool? HasMealAddon { get; set; }
+		
+		public TicketAddon? MealAddon { get; set; }
+		
+		
 	}
 
 	public class VolunteerPositionSelection

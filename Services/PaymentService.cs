@@ -101,17 +101,17 @@ namespace KiCData.Services
             return response;
         }
         
-        public List<TicketInventory> GetTicketInventory(string objectSearchTerm)
+        public async Task<List<ItemInventory>> GetItemInventoryAsync(string objectSearchTerm)
         {
-            List<TicketInventory> response = getTicketInventory(objectSearchTerm);
+            var response = await Task.Run(() => getItemInventory(objectSearchTerm));
             return response;
         }
 
-        private List<TicketInventory> getTicketInventory(string objectSearchTerm)
+        private async Task<List<ItemInventory>> getItemInventory(string objectSearchTerm)
         {
-            List<TicketInventory> inventory = new List<TicketInventory>();
+            List<ItemInventory> inventory = new List<ItemInventory>();
 
-            ListCatalogResponse catResponse = _client.CatalogApi.ListCatalog();
+            ListCatalogResponse catResponse = await Task.Run(() => _client.CatalogApi.ListCatalog());
             List<CatalogObject> objs = catResponse.Objects
                 .Where(o => o.Type == "ITEM" && o.ItemData?.Name.Contains(objectSearchTerm) == true)
                 .ToList();
@@ -140,7 +140,7 @@ namespace KiCData.Services
                         throw new Exception("No count for " + variation.ItemVariationData.Name + " found.");
                     }
 
-                    TicketInventory ti = new TicketInventory
+                    ItemInventory ti = new ItemInventory
                     {
                         SquareId = variation.Id,
                         Name = variation.ItemVariationData.Name,
@@ -275,6 +275,25 @@ namespace KiCData.Services
                 throw new InvalidDataException();
             }
         }
+        
+        public async Task<TicketAddon> GetAddonItemAsync()
+        {
+            return await Task.Run(() => GetAddonItem());
+        }
+        
+        public async Task<TicketAddon> GetAddonItem()
+        {
+            CatalogObject catObj = await Task.Run(() =>            
+                _client.CatalogApi.ListCatalog().Objects.Where(o => o.ItemData.Name == "Decadent Delights").First()
+            );
+
+            TicketAddon ticketAddon = new TicketAddon();
+            ticketAddon.Name = "Decadent Delights";
+            ticketAddon.Price = (double)catObj.ItemData.Variations.First().ItemVariationData.PriceMoney.Amount;
+            ticketAddon.SquareID = catObj.Id;
+
+            return ticketAddon;
+        }
         #endregion
 
         #region Generic Payment Methods
@@ -368,8 +387,6 @@ namespace KiCData.Services
                     IsComped = false
                 };
                 
-                if(item.)
-                
                 _context.Ticket.Add(ticket);
             }
             
@@ -456,6 +473,29 @@ namespace KiCData.Services
                 _context.Attendees.Add(attendee);
                 _context.SaveChanges();
             }
+        }
+        
+        public Task SetAttendeesPaidAsync(List<RegistrationViewModel> registrationViewModels)
+        {
+            return Task.Run(() => SetAttendeesPaid(registrationViewModels));
+        }
+
+        private async void SetAttendeesPaid(List<RegistrationViewModel> registrationViewModels)
+        {
+            await Task.Run(() =>
+            {
+                foreach (RegistrationViewModel rvm in registrationViewModels)
+                {
+                    Attendee attendee = _context.Attendees
+                        .Where(a => a.Ticket.EventId == int.Parse(_config["CUREID"])
+                        && a.BadgeName == rvm.BadgeName)
+                        .First();
+
+                    attendee.IsPaid = true;
+
+                    _context.SaveChanges();
+                }
+            });            
         }
         
         private void HandleOrderItems(List<IPurchaseModel> items)
