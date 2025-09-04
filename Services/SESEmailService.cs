@@ -1,7 +1,6 @@
 ﻿using Amazon;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
-using Hangfire;
 using KiCData.Models.WebModels;
 using Microsoft.Extensions.Configuration;
 
@@ -12,15 +11,13 @@ namespace KiCData.Services
         private readonly IConfigurationRoot _config;
         private readonly IKiCLogger _logger;
         private readonly AmazonSimpleEmailServiceClient _client;
-        private readonly IBackgroundJobClient _backgroundJobClient;
 
-        public SESEmailService(IConfigurationRoot config, IKiCLogger logger, IBackgroundJobClient backgroundJobClient)
+        public SESEmailService(IConfigurationRoot config, IKiCLogger logger)
         {
             this._config = config;
             this._logger = logger;
             var awsRegion = RegionEndpoint.GetBySystemName(config["AWS:Region"]);
             this._client = new AmazonSimpleEmailServiceClient(config["AWS:AccessKey"], config["AWS:SecretKey"], awsRegion);
-            this._backgroundJobClient =  backgroundJobClient;
         }
 
         /// <summary>
@@ -94,10 +91,18 @@ namespace KiCData.Services
                 Message = msg,
                 Source = message.From
             };
-            _client.SendEmailAsync(req, CancellationToken.None).Wait();
-            //this._backgroundJobClient.Enqueue(() => _client.SendEmailAsync(req, CancellationToken.None) );
-
-            _logger.LogText("Message sent...");
+            try
+            {
+                _client.SendEmailAsync(req, CancellationToken.None).Wait();
+                _logger.LogText("Message sent...");
+            }
+            catch (AmazonSimpleEmailServiceException e)
+            {
+                _logger.LogText("An error occured while sending email. See the exception below for details.");
+                _logger.LogText(e.Message);
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 }
