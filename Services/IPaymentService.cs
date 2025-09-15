@@ -24,5 +24,6 @@ namespace KiCData.Services
         public Task ReduceTicketInventoryAsync(List<RegistrationViewModel> registrationViewModels);
         public Task ReduceAddonInventoryAsync(List<TicketAddon> ticketAddons);
         public Task<TicketAddon> GetAddonItemAsync();
+        public Task<string> GetOrderIDAsync(List<RegistrationViewModel> registrationViewModels);
     }
 }
