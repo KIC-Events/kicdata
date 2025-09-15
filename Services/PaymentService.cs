@@ -15,9 +15,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using KiCData.Exceptions;
+using Square.Exceptions;
 
 namespace KiCData.Services
 {
@@ -38,18 +41,33 @@ namespace KiCData.Services
             {
                 env = Square.Environment.Sandbox;
             }
+            var token =  configuration["Square:Token"];
 
             _client = new SquareClient.Builder().BearerAuthCredentials
                 (
-                    new BearerAuthModel.Builder(configuration["Square:Token"])
+                    new BearerAuthModel.Builder(token)
                     .Build()
                 )
                 .Environment(env)
                 .Build();
                 
             _logger = logger;
-            
-            _locationId = _client.LocationsApi.ListLocations().Locations.First().Id;
+
+            try
+            {
+                Console.WriteLine($"Base URI: {_client.GetBaseUri()}");
+                _locationId = _client.LocationsApi.ListLocations().Locations.First().Id;
+            }
+            catch (ApiException e)
+            {
+                Console.WriteLine($"An error occurred while fetching locations: {e.Message}");
+                Console.WriteLine($"Response code: {e.ResponseCode}");
+                foreach (var err in e.Errors)
+                {
+                    Console.WriteLine($"[{err.Code}] {err.Category} - {err.Detail}");
+                }
+                throw;
+            }
             
             _context = context;
 
@@ -74,7 +92,7 @@ namespace KiCData.Services
 
             if (obj == null)
             {
-                throw new Exception("Object not found.");
+                throw new InventoryException("Object not found.");
             }
 
             string varId = obj.ItemData.Variations
@@ -86,12 +104,12 @@ namespace KiCData.Services
 
             if (countResponse.Counts == null)
             {
-                throw new Exception("No count for " + variationSearchTerm + " found.");
+                throw new InventoryException("No count for " + variationSearchTerm + " found.");
             }
 
             if(countResponse.Counts.Count > 1)
             {
-                throw new Exception("Found multiple counts for " + variationSearchTerm + ".");
+                throw new InventoryException("Found multiple counts for " + variationSearchTerm + ".");
             }
 
             InventoryCount count = countResponse.Counts.FirstOrDefault();
@@ -118,7 +136,7 @@ namespace KiCData.Services
 
             if (objs == null || objs.Count == 0)
             {
-                throw new Exception("Object not found.");
+                throw new InventoryException("Object not found.");
             }
 
             foreach(CatalogObject obj in objs)
@@ -137,7 +155,7 @@ namespace KiCData.Services
                     }
                     else
                     {                        
-                        throw new Exception("No count for " + variation.ItemVariationData.Name + " found.");
+                        throw new InventoryException("No count for " + variation.ItemVariationData.Name + " found.");
                     }
 
                     ItemInventory ti = new ItemInventory
@@ -164,7 +182,17 @@ namespace KiCData.Services
         {
             List<CatalogObject> catalogObjects = _client.CatalogApi.ListCatalog().Objects.ToList();
             CatalogObject catObj = catalogObjects.Where(o => o.ItemData.Name == "CURE 2026").First();
-            CatalogObject variationObj = catObj.ItemData.Variations.Where(v => v.ItemVariationData.Name == objectSearchTerm).First();
+            CatalogObject variationObj;
+            try
+            {
+                variationObj = catObj.ItemData.Variations.Where(v => v.ItemVariationData.Name == objectSearchTerm).First();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while fetching item variations for '{objectSearchTerm}': {e.Message}");
+                Console.WriteLine(e);
+                throw;
+            }
 
             return (double)variationObj.ItemVariationData.PriceMoney.Amount;
         }
