@@ -818,6 +818,14 @@ namespace KiCData.Services
 
             return result;
         }
+        
+        public void HandleNonPaymentCURETicketOrder(List<RegistrationViewModel> registrationViewModels)
+        {
+            foreach(RegistrationViewModel rvm in registrationViewModels)
+            {
+                addCompedTicketItemToDataBase(rvm, Guid.NewGuid().ToString());
+            }
+        }
         #endregion
 
         #region CURE Payment Link Methods
