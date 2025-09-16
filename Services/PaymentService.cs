@@ -569,6 +569,8 @@ namespace KiCData.Services
                     IsComped = false                  
                 };
 
+                string saltedString = item.BadgeName + item.DateOfBirth.ToString();
+
                 Attendee attendee = new Attendee
                 {
                     Member = member,
@@ -577,7 +579,7 @@ namespace KiCData.Services
                     BadgeName = item.BadgeName,
                     BackgroundChecked = false,
                     Pronouns = item.Pronouns,
-                    ConfirmationNumber = item.BadgeName.GetHashCode(),
+                    ConfirmationNumber = saltedString.GetHashCode(),
                     RoomWaitListed = item.WaitList,
                     TicketWaitListed = item.WaitList,
                     RoomPreference = item.RoomType,
@@ -617,13 +619,14 @@ namespace KiCData.Services
                 
             if(attendee is null)
             {
+                string saltedString = item.BadgeName + item.DateOfBirth.ToString();
                 attendee = new Attendee()
                 {
                     Ticket = ticket,
                     TicketId = ticket.Id,
                     BadgeName = item.BadgeName,
                     BackgroundChecked = false,
-                    ConfirmationNumber = item.BadgeName.GetHashCode(),
+                    ConfirmationNumber = saltedString.GetHashCode(),
                     RoomWaitListed = item.WaitList,
                     TicketWaitListed = item.WaitList,
                     RoomPreference = item.RoomType,
