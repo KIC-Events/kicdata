@@ -515,6 +515,12 @@ namespace KiCData.Services
             
             foreach (var item in items)
             {
+                if(item.TicketComp is not null)
+                {
+                    addCompedTicketItemToDataBase(item, squareOrderID);
+                    break;
+                }
+            
                 Member? member = _context.Members
                     .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
                     .FirstOrDefault();
@@ -563,20 +569,6 @@ namespace KiCData.Services
                     IsComped = false                  
                 };
 
-                if (item.TicketComp is not null)
-                {
-                    ticket.IsComped = true;
-
-                    TicketComp ticketComp = _context.TicketComp
-                        .Where(tc => tc.Id == item.TicketComp.Id)
-                        .FirstOrDefault();
-
-                    if (ticketComp is null) throw new UnreachableException("The expected ticketcomp was not found.");
-
-                    ticketComp.Ticket = ticket;
-                    ticketComp.TicketId = ticket.Id;
-                }
-
                 Attendee attendee = new Attendee
                 {
                     Member = member,
@@ -602,6 +594,96 @@ namespace KiCData.Services
                 _context.Attendees.Add(attendee);
                 _context.SaveChanges();
             }
+        }
+
+        /// <summary>
+        /// Adds a comped (complimentary) ticket item to the database, updating ticket, attendee, and member records as needed.
+        /// </summary>
+        /// <param name="item">The registration view model containing attendee and ticket information.</param>
+        /// <param name="squareOrderID">The Square Order ID associated with the ticket.</param>
+        private void addCompedTicketItemToDataBase(RegistrationViewModel item, string squareOrderID)
+        {
+            TicketComp ticketComp = _context.TicketComp
+                .Where(tc => tc.Id == item.TicketComp.Id)
+                .First();
+
+            Ticket ticket = _context.Ticket
+                .Where(t => t.Id == ticketComp.TicketId)
+                .First();
+
+            Attendee attendee = _context.Attendees
+                .Where(a => a.TicketId == ticket.Id)
+                .FirstOrDefault();
+                
+            if(attendee is null)
+            {
+                attendee = new Attendee()
+                {
+                    Ticket = ticket,
+                    TicketId = ticket.Id,
+                    BadgeName = item.BadgeName,
+                    BackgroundChecked = false,
+                    ConfirmationNumber = item.BadgeName.GetHashCode(),
+                    RoomWaitListed = item.WaitList,
+                    TicketWaitListed = item.WaitList,
+                    RoomPreference = item.RoomType,
+                    IsPaid = false,
+                    isRegistered = true,
+                    Pronouns = item.Pronouns,
+                    OrderID = squareOrderID
+                };
+            }
+
+            Member member = _context.Members
+                .Where(m => m.Id == attendee.MemberId)
+                .FirstOrDefault();
+                
+            if(member is null)
+            {
+                member = new Member()
+                {
+                    FirstName = item.FirstName,
+                    LastName = item.LastName,
+                    Email = item.LastName,
+                    DateOfBirth = item.DateOfBirth,
+                    FetName = item.FetName,
+                    ClubId = item.ClubId,
+                    PhoneNumber = item.PhoneNumber,
+                    City = item.City,
+                    State = item.State,
+                    SexOnID = item.SexOnID
+                };
+            }
+
+            KiCData.Models.Event e = _context.Events
+                .Where(ev => ev.Id == int.Parse(_config["CUREID"]))
+                .First();
+
+            attendee.Member = member;
+            attendee.MemberId = member.Id;
+
+            ticket.Event = e;
+            ticket.EventId = e.Id;
+            ticket.Price = item.Price;
+            
+            if(ticketComp.CompPct == 100)
+            {
+                ticket.Type = "Comp";
+            }
+            else
+            {
+                ticket.Type = "Partial Comp";
+            }
+
+            ticket.DatePurchased = DateOnly.FromDateTime(DateTime.Now);
+            ticket.StartDate = e.StartDate;
+            ticket.EndDate = e.EndDate;
+            ticket.IsComped = true;
+
+            ticketComp.Ticket = ticket;
+            ticketComp.TicketId = ticket.Id;
+
+            _context.SaveChanges();
         }
 
         /// <summary>
