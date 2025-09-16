@@ -465,7 +465,19 @@ namespace KiCData.Services
                     IsComped = false                  
                 };
 
-                if (item.TicketComp is not null) ticket.IsComped = true;
+                if (item.TicketComp is not null)
+                {
+                    ticket.IsComped = true;
+
+                    TicketComp ticketComp = _context.TicketComp
+                        .Where(tc => tc.Id == item.TicketComp.Id)
+                        .FirstOrDefault();
+
+                    if (ticketComp is null) throw new UnreachableException("The expected ticketcomp was not found.");
+
+                    ticketComp.Ticket = ticket;
+                    ticketComp.TicketId = ticket.Id;
+                }
 
                 Attendee attendee = new Attendee
                 {

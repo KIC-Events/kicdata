@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KiCData.Migrations
 {
     [DbContext(typeof(KiCdbContext))]
-    [Migration("20250904175339_comp-redemption")]
-    partial class compredemption
+    [Migration("20250916002241_remove-multi-offer")]
+    partial class removemultioffer
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -560,9 +560,6 @@ namespace KiCData.Migrations
                     b.Property<string>("DiscountCode")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<int?>("RemainingRedemptions")
-                        .HasColumnType("int");
 
                     b.Property<int?>("TicketId")
                         .HasColumnType("int");

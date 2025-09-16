@@ -558,9 +558,6 @@ namespace KiCData.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("RemainingRedemptions")
-                        .HasColumnType("int");
-
                     b.Property<int?>("TicketId")
                         .HasColumnType("int");
 
