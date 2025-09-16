@@ -60,12 +60,24 @@ namespace KiCData.Services
         #endregion
         
         #region Inventory Methods
+        /// <summary>
+        /// Checks inventory for a specific item and variation.
+        /// </summary>
+        /// <param name="objectSearchTerm">Item name to search for.</param>
+        /// <param name="variationSearchTerm">Variation name to search for.</param>
+        /// <returns>Inventory count as int.</returns>
         public int CheckInventory(string objectSearchTerm, string variationSearchTerm)
         {
             int response = checkInventory(objectSearchTerm, variationSearchTerm);
             return response;
         }
 
+        /// <summary>
+        /// Internal method to check inventory for a specific item and variation.
+        /// </summary>
+        /// <param name="objectSearchTerm">Item name to search for.</param>
+        /// <param name="variationSearchTerm">Variation name to search for.</param>
+        /// <returns>Inventory count as int.</returns>
         private int checkInventory(string objectSearchTerm, string variationSearchTerm)
         {
             ListCatalogResponse catResponse = _client.CatalogApi.ListCatalog();
@@ -101,13 +113,23 @@ namespace KiCData.Services
 
             return response;
         }
-        
+
+        /// <summary>
+        /// Gets inventory details for all variations of an item asynchronously.
+        /// </summary>
+        /// <param name="objectSearchTerm">Item name to search for.</param>
+        /// <returns>List of ItemInventory objects.</returns>
         public async Task<List<ItemInventory>> GetItemInventoryAsync(string objectSearchTerm)
         {
             var response = await Task.Run(() => getItemInventory(objectSearchTerm));
             return response;
         }
 
+        /// <summary>
+        /// Internal method to get inventory details for all variations of an item.
+        /// </summary>
+        /// <param name="objectSearchTerm">Item name to search for.</param>
+        /// <returns>List of ItemInventory objects.</returns>
         private async Task<List<ItemInventory>> getItemInventory(string objectSearchTerm)
         {
             List<ItemInventory> inventory = new List<ItemInventory>();
@@ -155,12 +177,22 @@ namespace KiCData.Services
 
             return inventory;
         }
-        
+
+        /// <summary>
+        /// Gets the price of a ticket variation.
+        /// </summary>
+        /// <param name="objectSearchTerm">Variation name to search for.</param>
+        /// <returns>Price as double.</returns>
         public double GetTicketPrice(string objectSearchTerm)
         {
             return getTicketPrice(objectSearchTerm);
         }
-        
+
+        /// <summary>
+        /// Internal method to get the price of a ticket variation.
+        /// </summary>
+        /// <param name="objectSearchTerm">Variation name to search for.</param>
+        /// <returns>Price as double.</returns>
         private double getTicketPrice(string objectSearchTerm)
         {
             List<CatalogObject> catalogObjects = _client.CatalogApi.ListCatalog().Objects.ToList();
@@ -169,12 +201,21 @@ namespace KiCData.Services
 
             return (double)variationObj.ItemVariationData.PriceMoney.Amount;
         }
-        
+
+        /// <summary>
+        /// Reduces inventory for tickets based on registration view models.
+        /// </summary>
+        /// <param name="registrationViewModels">List of registrations.</param>
+        /// <returns>Task.</returns>
         public Task ReduceTicketInventoryAsync(List<RegistrationViewModel> registrationViewModels)
         {
             return Task.Run(() => ReduceTicketInventory(registrationViewModels));
         }
-        
+
+        /// <summary>
+        /// Internal method to reduce ticket inventory.
+        /// </summary>
+        /// <param name="registrationViewModels">List of registrations.</param>
         private async void ReduceTicketInventory(List<RegistrationViewModel> registrationViewModels)
         {
             int goldCount = 0;
@@ -247,12 +288,21 @@ namespace KiCData.Services
                 throw new InvalidDataException();
             }
         }
-        
+
+        /// <summary>
+        /// Reduces inventory for add-on items.
+        /// </summary>
+        /// <param name="ticketAddons">List of ticket add-ons.</param>
+        /// <returns>Task.</returns>
         public Task ReduceAddonInventoryAsync(List<TicketAddon> ticketAddons)
         {
             return Task.Run(() => ReduceAddonInventory(ticketAddons));
         }
-        
+
+        /// <summary>
+        /// Internal method to reduce add-on inventory.
+        /// </summary>
+        /// <param name="ticketAddons">List of ticket add-ons.</param>
         private async void ReduceAddonInventory(List<TicketAddon> ticketAddons)
         {
             int count = 0;
@@ -276,12 +326,20 @@ namespace KiCData.Services
                 throw new InvalidDataException();
             }
         }
-        
+
+        /// <summary>
+        /// Gets the add-on item details asynchronously.
+        /// </summary>
+        /// <returns>TicketAddon object.</returns>
         public async Task<TicketAddon> GetAddonItemAsync()
         {
             return await Task.Run(() => GetAddonItem());
         }
-        
+
+        /// <summary>
+        /// Internal method to get add-on item details.
+        /// </summary>
+        /// <returns>TicketAddon object.</returns>
         public async Task<TicketAddon> GetAddonItem()
         {
             CatalogObject catObj = await Task.Run(() =>            
@@ -295,12 +353,22 @@ namespace KiCData.Services
 
             return ticketAddon;
         }
-        
+
+        /// <summary>
+        /// Gets the Square Order ID for a list of registrations.
+        /// </summary>
+        /// <param name="registrationViewModels">List of registrations.</param>
+        /// <returns>Order ID as string.</returns>
         public async Task<string> GetOrderIDAsync(List<RegistrationViewModel> registrationViewModels)
         {
             return await Task.Run(() => getOrderID(registrationViewModels));
         }
-        
+
+        /// <summary>
+        /// Internal method to get Square Order ID.
+        /// </summary>
+        /// <param name="registrationViewModels">List of registrations.</param>
+        /// <returns>Order ID as string.</returns>
         private async Task<string> getOrderID(List<RegistrationViewModel> registrationViewModels)
         {
             RegistrationViewModel rvm = registrationViewModels.First();
@@ -317,13 +385,24 @@ namespace KiCData.Services
 
         #region Generic Payment Methods
 
-
+        /// <summary>
+        /// Creates a generic payment for a list of items.
+        /// </summary>
+        /// <param name="cardToken">Card token for payment.</param>
+        /// <param name="billingContact">Billing contact information.</param>
+        /// <param name="items">List of purchase models.</param>
         public void CreateGenericPayment(string cardToken, BillingContact billingContact, List<IPurchaseModel> items)
         {
             double itemPrice = convertItemsToOrder(items);
             createGenericPayment(cardToken, billingContact, itemPrice);
         }
 
+        /// <summary>
+        /// Internal method to create a generic payment.
+        /// </summary>
+        /// <param name="cardToken">Card token for payment.</param>
+        /// <param name="billingContact">Billing contact information.</param>
+        /// <param name="price">Total price.</param>
         private void createGenericPayment(string cardToken, BillingContact billingContact, double price)
         {
             long amountInCents = (long)(price * 100); // Square API expects amount in cents
@@ -338,7 +417,12 @@ namespace KiCData.Services
                 
             var result = _client.PaymentsApi.CreatePayment(payment);
         }
-        
+
+        /// <summary>
+        /// Converts a list of items to an order and calculates total price.
+        /// </summary>
+        /// <param name="items">List of purchase models.</param>
+        /// <returns>Total price as double.</returns>
         private double convertItemsToOrder(List<IPurchaseModel> items)
         {
             double totalPrice = 0.0;
@@ -370,7 +454,12 @@ namespace KiCData.Services
             
             return totalPrice;
         }
-        
+
+        /// <summary>
+        /// Calculates the total price for a list of registrations.
+        /// </summary>
+        /// <param name="items">List of registrations.</param>
+        /// <returns>Total price as double.</returns>
         private double getTotalPrice(List<RegistrationViewModel> items)
         {
             double totalPrice = 0.0;
@@ -391,6 +480,10 @@ namespace KiCData.Services
             return totalPrice;
         }
 
+        /// <summary>
+        /// Adds ticket items to the database.
+        /// </summary>
+        /// <param name="items">List of ticket purchase models.</param>
         private void addTicketItemsToDataBase(List<ITicketPurchaseModel> items)
         {
             foreach (var item in items)
@@ -411,7 +504,12 @@ namespace KiCData.Services
             
             _context.SaveChanges();
         }
-        
+
+        /// <summary>
+        /// Adds ticket items to the database with Square Order ID.
+        /// </summary>
+        /// <param name="items">List of registration view models.</param>
+        /// <param name="squareOrderID">Square Order ID.</param>
         private void addTicketItemsToDataBase(List<RegistrationViewModel> items, string squareOrderID)
         {
             
@@ -505,12 +603,21 @@ namespace KiCData.Services
                 _context.SaveChanges();
             }
         }
-        
+
+        /// <summary>
+        /// Sets attendees as paid asynchronously.
+        /// </summary>
+        /// <param name="registrationViewModels">List of registrations.</param>
+        /// <returns>Task.</returns>
         public Task SetAttendeesPaidAsync(List<RegistrationViewModel> registrationViewModels)
         {
             return Task.Run(() => SetAttendeesPaid(registrationViewModels));
         }
 
+        /// <summary>
+        /// Internal method to set attendees as paid.
+        /// </summary>
+        /// <param name="registrationViewModels">List of registrations.</param>
         private async void SetAttendeesPaid(List<RegistrationViewModel> registrationViewModels)
         {
             await Task.Run(() =>
@@ -540,22 +647,31 @@ namespace KiCData.Services
                 }
             });            
         }
-        
+
+        /// <summary>
+        /// Handles non-ticket order items.
+        /// </summary>
+        /// <param name="items">List of purchase models.</param>
         private void HandleOrderItems(List<IPurchaseModel> items)
         {
-        
+            
         }
-        
+
         /// <summary>
-        /// Queries the Square Payment API to check the status of a payment.
+        /// Checks the status of a payment using Square Payment API.
         /// </summary>
-        /// <param name="paymentId">The String ID of a payment.</param>
-        /// <returns>bool</returns>
+        /// <param name="paymentId">Payment ID string.</param>
+        /// <returns>Status as string.</returns>
         public string CheckPaymentStatus(string paymentId)
         {
             return checkPaymentStatus(paymentId);
         }
-        
+
+        /// <summary>
+        /// Internal method to check payment status.
+        /// </summary>
+        /// <param name="paymentId">Payment ID string.</param>
+        /// <returns>Status as string.</returns>
         private string checkPaymentStatus(string paymentId)
         {
             try
@@ -572,7 +688,14 @@ namespace KiCData.Services
         #endregion
 
         #region CURE Payment Methods
-        
+
+        /// <summary>
+        /// Creates a payment for CURE event tickets.
+        /// </summary>
+        /// <param name="cardToken">Card token for payment.</param>
+        /// <param name="billingContact">Billing contact information.</param>
+        /// <param name="items">List of registrations.</param>
+        /// <returns>Payment status as string.</returns>
         public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items)
         {
             double itemPrice = getTotalPrice(items);
@@ -584,6 +707,13 @@ namespace KiCData.Services
             return result.Payment.Status;
         }
 
+        /// <summary>
+        /// Internal method to create a payment for CURE event tickets.
+        /// </summary>
+        /// <param name="cardToken">Card token for payment.</param>
+        /// <param name="billingContact">Billing contact information.</param>
+        /// <param name="price">Total price.</param>
+        /// <returns>CreatePaymentResponse object.</returns>
         private CreatePaymentResponse createCUREPayment(string cardToken, BillingContact billingContact, double price)
         {
             long amountInCents = (long)(price * 100); // Square API expects amount in cents
@@ -603,20 +733,15 @@ namespace KiCData.Services
 
             return result;
         }
-        
         #endregion
 
         #region CURE Payment Link Methods
-        /*
-         * 10-24-2024 194-add-ticket-purchase-for-blashphemy
-         * https://github.com/Malechus/kic/issues/194
-         * This method should be a reusable method with injectable data
-         * but since we are two and half months away from the event
-         * rather than risk a refactor I am just renaming this method
-         * from CreatePaymentLink to CreateCurePaymentLink and building a new
-         * reusable CreatePaymentLink method.
-         * Malechus
-         */
+
+        /// <summary>
+        /// Creates a Square payment link for CURE event tickets.
+        /// </summary>
+        /// <param name="regList">List of registrations.</param>
+        /// <returns>PaymentLink object.</returns>
         public PaymentLink CreateCurePaymentLink(List<RegistrationViewModel> regList)
         {
             PaymentLink paymentLink = createCurePaymentLink(regList);
@@ -624,6 +749,11 @@ namespace KiCData.Services
             return paymentLink;
         }
 
+        /// <summary>
+        /// Internal method to create a Square payment link for CURE event tickets.
+        /// </summary>
+        /// <param name="regList">List of registrations.</param>
+        /// <returns>PaymentLink object.</returns>
         private PaymentLink createCurePaymentLink(List<RegistrationViewModel> regList)
         {
             List<OrderLineItem> orderLineItems = new List<OrderLineItem>();
@@ -757,7 +887,6 @@ namespace KiCData.Services
 
             return paymentLink;
         }
-        
         #endregion
 
         #region Payment Link Methods
@@ -776,6 +905,14 @@ namespace KiCData.Services
             return paymentLink;
         }
 
+        /// <summary>
+        /// Internal method to generate a dynamic Square payment link for requested items.
+        /// </summary>
+        /// <param name="regList">List<RegistrationViewModel> containing the registrants purchasing event tickets.</param>
+        /// <param name="kicEvent">The KiCData.Models.Event object for which tickets are being purchased.</param>
+        /// <param name="discountCodes">String[] array of discount codes that could apply.</param>
+        /// <param name="redirectUrl">Url for redirect after payment complete (merch, etc.) leave empty for generic success page.</param>
+        /// <returns>PaymentLink</returns>
         private PaymentLink createPaymentLink(List<RegistrationViewModel> regList, KiCData.Models.Event kicEvent, string[] discountCodes = null, string redirectUrl = null)
         {
             if(redirectUrl is null) redirectUrl = "https://www.kicevents.com/success";
@@ -869,7 +1006,6 @@ namespace KiCData.Services
 
             return paymentLink;
         }
-        
         #endregion
     }
 }
