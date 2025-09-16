@@ -19,8 +19,7 @@ using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using KiCData.Exceptions;
-using Square.Exceptions;
+using System.Xml;
 
 namespace KiCData.Services
 {
@@ -134,10 +133,10 @@ namespace KiCData.Services
                 .Where(o => o.Type == "ITEM" && o.ItemData?.Name.Contains(objectSearchTerm) == true)
                 .ToList();
 
-            if (objs == null || objs.Count == 0)
-            {
-                throw new InventoryException("Object not found.");
-            }
+            //if (objs == null || objs.Count == 0)
+            //{
+            //    throw new Exception("Object not found.");
+            //}
 
             foreach(CatalogObject obj in objs)
             {
@@ -236,7 +235,7 @@ namespace KiCData.Services
             
             if(goldCount > 0)
             {
-                InventoryAdjustment goldAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:GoldTicket"], quantity: goldCount.ToString(), occurredAt: DateTime.UtcNow.ToString());
+                InventoryAdjustment goldAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:Gold Ticket"], quantity: goldCount.ToString(), occurredAt: XmlConvert.ToString(DateTime.Now, XmlDateTimeSerializationMode.Utc), locationId: _locationId);
                 InventoryChange goldChange = new InventoryChange(type: "ADJUSTMENT", adjustment: goldAdjustment);
 
                 changes.Add(goldChange);
@@ -244,7 +243,7 @@ namespace KiCData.Services
             
             if(silverCount > 0)
             {
-                InventoryAdjustment silverAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:SilverTicket"], quantity: silverCount.ToString(), occurredAt: DateTime.UtcNow.ToString());
+                InventoryAdjustment silverAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:Silver Ticket"], quantity: silverCount.ToString(), occurredAt: XmlConvert.ToString(DateTime.Now, XmlDateTimeSerializationMode.Utc), locationId: _locationId);
                 InventoryChange silverChange = new InventoryChange(type: "ADJUSTMENT", adjustment: silverAdjustment);
 
                 changes.Add(silverChange);
@@ -252,7 +251,7 @@ namespace KiCData.Services
             
             if(suiteCount > 0)
             {
-                InventoryAdjustment suiteAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:GoldTicket"], quantity: suiteCount.ToString(), occurredAt: DateTime.UtcNow.ToString());
+                InventoryAdjustment suiteAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:Suite Ticket"], quantity: suiteCount.ToString(), occurredAt: XmlConvert.ToString(DateTime.Now, XmlDateTimeSerializationMode.Utc), locationId: _locationId);
                 InventoryChange suiteChange = new InventoryChange(type: "ADJUSTMENT", adjustment: suiteAdjustment);
 
                 changes.Add(suiteChange);
@@ -260,7 +259,7 @@ namespace KiCData.Services
             
             if(standardCount > 0)
             {
-                InventoryAdjustment standardAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:GoldTicket"], quantity: standardCount.ToString(), occurredAt: DateTime.UtcNow.ToString());
+                InventoryAdjustment standardAdjustment = new InventoryAdjustment(fromState: "IN_STOCK", toState: "SOLD", catalogObjectId: _config["Square:Items:Standard Ticket"], quantity: standardCount.ToString(), occurredAt: XmlConvert.ToString(DateTime.Now, XmlDateTimeSerializationMode.Utc), locationId: _locationId);
                 InventoryChange standardChange = new InventoryChange(type: "ADJUSTMENT", adjustment: standardAdjustment);
 
                 changes.Add(standardChange);
@@ -321,6 +320,24 @@ namespace KiCData.Services
             ticketAddon.SquareID = catObj.Id;
 
             return ticketAddon;
+        }
+        
+        public async Task<string> GetOrderIDAsync(List<RegistrationViewModel> registrationViewModels)
+        {
+            return await Task.Run(() => getOrderID(registrationViewModels));
+        }
+        
+        private async Task<string> getOrderID(List<RegistrationViewModel> registrationViewModels)
+        {
+            RegistrationViewModel rvm = registrationViewModels.First();
+
+            string orderID = _context.Attendees
+                .Where(a => a.BadgeName == rvm.BadgeName
+                && a.Ticket.EventId == int.Parse(_config["CUREID"]))
+                .First()
+                .OrderID;
+
+            return orderID;
         }
         #endregion
 
@@ -474,7 +491,19 @@ namespace KiCData.Services
                     IsComped = false                  
                 };
 
-                if (item.TicketComp is not null) ticket.IsComped = true;
+                if (item.TicketComp is not null)
+                {
+                    ticket.IsComped = true;
+
+                    TicketComp ticketComp = _context.TicketComp
+                        .Where(tc => tc.Id == item.TicketComp.Id)
+                        .FirstOrDefault();
+
+                    if (ticketComp is null) throw new UnreachableException("The expected ticketcomp was not found.");
+
+                    ticketComp.Ticket = ticket;
+                    ticketComp.TicketId = ticket.Id;
+                }
 
                 Attendee attendee = new Attendee
                 {
@@ -514,14 +543,26 @@ namespace KiCData.Services
             {
                 foreach (RegistrationViewModel rvm in registrationViewModels)
                 {
-                    Attendee attendee = _context.Attendees
+                    try
+                    {
+                        Attendee attendee = _context.Attendees
                         .Where(a => a.Ticket.EventId == int.Parse(_config["CUREID"])
                         && a.BadgeName == rvm.BadgeName)
                         .First();
 
-                    attendee.IsPaid = true;
+                        attendee.IsPaid = true;
 
-                    _context.SaveChanges();
+                        _context.SaveChanges();
+                    }
+                    catch(Exception ex)
+                    {
+                        _logger.LogText("An exception has occurred while setting an attendee's status as paid.");
+                        _logger.Log(ex);
+                        _logger.LogText(rvm.LastName);
+                        _logger.LogText(rvm.FirstName);
+                        _logger.LogText(rvm.Email);
+                        _logger.LogText(rvm.BadgeName);
+                    }
                 }
             });            
         }
