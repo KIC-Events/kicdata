@@ -22,7 +22,7 @@ using System.Xml;
 
 namespace KiCData.Services
 {
-    public class PaymentService : IPaymentService
+    public class PaymentService
     {
         #region Setup
         private SquareClient _client;
