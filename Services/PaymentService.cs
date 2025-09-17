@@ -388,12 +388,22 @@ namespace KiCData.Services
         {
             RegistrationViewModel rvm = registrationViewModels.First();
 
-            string orderID = _context.Attendees
-                .First(a => a.BadgeName == rvm.BadgeName
-                            && a.Ticket.EventId == int.Parse(_config["CUREID"]))
+            try
+            {
+                string? orderID = _context.Attendees
+                .Where(a => a.BadgeName == rvm.BadgeName
+                    && a.Ticket.EventId == int.Parse(_config["CUREID"]))
+                .FirstOrDefault()
                 .OrderID;
 
-            return orderID;
+                return orderID;
+            }
+            catch(NullReferenceException ex)
+            {
+                string? orderID = "Full comp: " + rvm.DiscountCode;
+
+                return orderID;
+            }
         }
         #endregion
 
