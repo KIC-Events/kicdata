@@ -524,9 +524,10 @@ namespace KiCData.Services
         /// </summary>
         /// <param name="items">List of registration view models.</param>
         /// <param name="squareOrderID">Square Order ID.</param>
-        private void addTicketItemsToDataBase(List<RegistrationViewModel> items, string squareOrderID)
+        /// <returns>A list of the Attendee records that were added to the database.</returns>
+        private List<Attendee> addTicketItemsToDataBase(List<RegistrationViewModel> items, string squareOrderID)
         {
-            
+            List<Attendee> addedAttendees = [];
             foreach (var item in items)
             {
                 if(item.TicketComp is not null)
@@ -535,6 +536,8 @@ namespace KiCData.Services
                     break;
                 }
             
+                // Attempt to match the registration to an existing member.
+                // Create a new member record if a match is not found.
                 Member? member = _context.Members
                     .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
                     .FirstOrDefault();
@@ -563,12 +566,8 @@ namespace KiCData.Services
                         Attendee = null,
                     };
 
-                    _context.Members.Add(member);
+                    member = _context.Members.Add(member).Entity;
                     _context.SaveChanges();
-
-                    member = _context.Members
-                        .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
-                        .First();
                 }
 
                 Ticket ticket = new Ticket
@@ -607,9 +606,11 @@ namespace KiCData.Services
                 ticket.Attendee = attendee;
 
                 _context.Ticket.Add(ticket);
-                _context.Attendees.Add(attendee);
+                addedAttendees.Add(_context.Attendees.Add(attendee).Entity);
                 _context.SaveChanges();
             }
+
+            return addedAttendees;
         }
 
         /// <summary>
@@ -617,7 +618,7 @@ namespace KiCData.Services
         /// </summary>
         /// <param name="item">The registration view model containing attendee and ticket information.</param>
         /// <param name="squareOrderID">The Square Order ID associated with the ticket.</param>
-        private void addCompedTicketItemToDataBase(RegistrationViewModel item, string squareOrderID)
+        private Attendee addCompedTicketItemToDataBase(RegistrationViewModel item, string squareOrderID)
         {
             TicketComp ticketComp = _context.TicketComp
                 .Where(tc => tc.Id == item.TicketComp.Id)
@@ -701,6 +702,7 @@ namespace KiCData.Services
             ticketComp.TicketId = ticket.Id;
 
             _context.SaveChanges();
+            return attendee;
         }
 
         /// <summary>
@@ -747,6 +749,17 @@ namespace KiCData.Services
             });            
         }
 
+        public List<Attendee> SetAttendeesPaid(List<Attendee> attendees)
+        {
+            foreach (Attendee attendee in attendees)
+            {
+                attendee.IsPaid = true;
+                _context.Update(attendee);
+            }
+            _context.SaveChanges();
+            return attendees;
+        }
+
         /// <summary>
         /// Handles non-ticket order items.
         /// </summary>
@@ -788,6 +801,12 @@ namespace KiCData.Services
 
         #region CURE Payment Methods
 
+        public string CreateCUREPayment(string cardToken, BillingContact billingContact,
+            List<RegistrationViewModel> items)
+        {
+            return CreateCUREPayment(cardToken, billingContact, items, out var attendees);
+        }
+        
         /// <summary>
         /// Creates a payment for CURE event tickets.
         /// </summary>
@@ -795,13 +814,13 @@ namespace KiCData.Services
         /// <param name="billingContact">Billing contact information.</param>
         /// <param name="items">List of registrations.</param>
         /// <returns>Payment status as string.</returns>
-        public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items)
+        public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items, out List<Attendee> attendees)
         {
             double itemPrice = getTotalPrice(items);
 
             var result = createCUREPayment(cardToken, billingContact, itemPrice);
 
-            addTicketItemsToDataBase(items, result.Payment.OrderId);
+            attendees = addTicketItemsToDataBase(items, result.Payment.OrderId);
 
             return result.Payment.Status;
         }
@@ -833,12 +852,14 @@ namespace KiCData.Services
             return result;
         }
         
-        public void HandleNonPaymentCURETicketOrder(List<RegistrationViewModel> registrationViewModels)
+        public List<Attendee> HandleNonPaymentCURETicketOrder(List<RegistrationViewModel> registrationViewModels)
         {
+            List<Attendee> attendees = [];
             foreach(RegistrationViewModel rvm in registrationViewModels)
             {
-                addCompedTicketItemToDataBase(rvm, Guid.NewGuid().ToString());
+                attendees.Add(addCompedTicketItemToDataBase(rvm, Guid.NewGuid().ToString()));
             }
+            return  attendees;
         }
         #endregion
 
