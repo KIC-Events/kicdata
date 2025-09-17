@@ -1,29 +1,18 @@
 ﻿using KiCData.Models;
 using KiCData.Models.WebModels;
-using KiCData.Models.WebModels.Member;
 using KiCData.Models.WebModels.PaymentModels;
 using KiCData.Models.WebModels.PurchaseModels;
-using Microsoft.EntityFrameworkCore.Query;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Asn1.Ocsp;
 using Square;
 using Square.Authentication;
 using Square.Models;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net.Security;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
+using KiCData.Exceptions;
+using Square.Exceptions;
 
 namespace KiCData.Services
 {
-    public class PaymentService : IPaymentService
+    public class PaymentService
     {
         #region Setup
         private SquareClient _client;
@@ -395,14 +384,13 @@ namespace KiCData.Services
         /// </summary>
         /// <param name="registrationViewModels">List of registrations.</param>
         /// <returns>Order ID as string.</returns>
-        private async Task<string> getOrderID(List<RegistrationViewModel> registrationViewModels)
+        public string? getOrderID(List<RegistrationViewModel> registrationViewModels)
         {
             RegistrationViewModel rvm = registrationViewModels.First();
 
             string orderID = _context.Attendees
-                .Where(a => a.BadgeName == rvm.BadgeName
-                && a.Ticket.EventId == int.Parse(_config["CUREID"]))
-                .First()
+                .First(a => a.BadgeName == rvm.BadgeName
+                            && a.Ticket.EventId == int.Parse(_config["CUREID"]))
                 .OrderID;
 
             return orderID;
