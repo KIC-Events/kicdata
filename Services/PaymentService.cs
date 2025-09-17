@@ -1,24 +1,14 @@
 ﻿using KiCData.Models;
 using KiCData.Models.WebModels;
-using KiCData.Models.WebModels.Member;
 using KiCData.Models.WebModels.PaymentModels;
 using KiCData.Models.WebModels.PurchaseModels;
-using Microsoft.EntityFrameworkCore.Query;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Asn1.Ocsp;
 using Square;
 using Square.Authentication;
 using Square.Models;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
+using KiCData.Exceptions;
+using Square.Exceptions;
 
 namespace KiCData.Services
 {
@@ -39,18 +29,33 @@ namespace KiCData.Services
             {
                 env = Square.Environment.Sandbox;
             }
+            var token =  configuration["Square:Token"];
 
             _client = new SquareClient.Builder().BearerAuthCredentials
                 (
-                    new BearerAuthModel.Builder(configuration["Square:Token"])
+                    new BearerAuthModel.Builder(token)
                     .Build()
                 )
                 .Environment(env)
                 .Build();
                 
             _logger = logger;
-            
-            _locationId = _client.LocationsApi.ListLocations().Locations.First().Id;
+
+            try
+            {
+                Console.WriteLine($"Base URI: {_client.GetBaseUri()}");
+                _locationId = _client.LocationsApi.ListLocations().Locations.First().Id;
+            }
+            catch (ApiException e)
+            {
+                Console.WriteLine($"An error occurred while fetching locations: {e.Message}");
+                Console.WriteLine($"Response code: {e.ResponseCode}");
+                foreach (var err in e.Errors)
+                {
+                    Console.WriteLine($"[{err.Code}] {err.Category} - {err.Detail}");
+                }
+                throw;
+            }
             
             _context = context;
 
@@ -87,7 +92,7 @@ namespace KiCData.Services
 
             if (obj == null)
             {
-                throw new Exception("Object not found.");
+                throw new InventoryException("Object not found.");
             }
 
             string varId = obj.ItemData.Variations
@@ -99,12 +104,12 @@ namespace KiCData.Services
 
             if (countResponse.Counts == null)
             {
-                throw new Exception("No count for " + variationSearchTerm + " found.");
+                throw new InventoryException("No count for " + variationSearchTerm + " found.");
             }
 
             if(countResponse.Counts.Count > 1)
             {
-                throw new Exception("Found multiple counts for " + variationSearchTerm + ".");
+                throw new InventoryException("Found multiple counts for " + variationSearchTerm + ".");
             }
 
             InventoryCount count = countResponse.Counts.FirstOrDefault();
@@ -160,7 +165,7 @@ namespace KiCData.Services
                     }
                     else
                     {                        
-                        throw new Exception("No count for " + variation.ItemVariationData.Name + " found.");
+                        throw new InventoryException("No count for " + variation.ItemVariationData.Name + " found.");
                     }
 
                     ItemInventory ti = new ItemInventory
@@ -197,7 +202,17 @@ namespace KiCData.Services
         {
             List<CatalogObject> catalogObjects = _client.CatalogApi.ListCatalog().Objects.ToList();
             CatalogObject catObj = catalogObjects.Where(o => o.ItemData.Name == "CURE 2026").First();
-            CatalogObject variationObj = catObj.ItemData.Variations.Where(v => v.ItemVariationData.Name == objectSearchTerm).First();
+            CatalogObject variationObj;
+            try
+            {
+                variationObj = catObj.ItemData.Variations.Where(v => v.ItemVariationData.Name == objectSearchTerm).First();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while fetching item variations for '{objectSearchTerm}': {e.Message}");
+                Console.WriteLine(e);
+                throw;
+            }
 
             return (double)variationObj.ItemVariationData.PriceMoney.Amount;
         }
@@ -369,14 +384,13 @@ namespace KiCData.Services
         /// </summary>
         /// <param name="registrationViewModels">List of registrations.</param>
         /// <returns>Order ID as string.</returns>
-        private async Task<string> getOrderID(List<RegistrationViewModel> registrationViewModels)
+        public string? getOrderID(List<RegistrationViewModel> registrationViewModels)
         {
             RegistrationViewModel rvm = registrationViewModels.First();
 
             string orderID = _context.Attendees
-                .Where(a => a.BadgeName == rvm.BadgeName
-                && a.Ticket.EventId == int.Parse(_config["CUREID"]))
-                .First()
+                .First(a => a.BadgeName == rvm.BadgeName
+                            && a.Ticket.EventId == int.Parse(_config["CUREID"]))
                 .OrderID;
 
             return orderID;
@@ -510,9 +524,10 @@ namespace KiCData.Services
         /// </summary>
         /// <param name="items">List of registration view models.</param>
         /// <param name="squareOrderID">Square Order ID.</param>
-        private void addTicketItemsToDataBase(List<RegistrationViewModel> items, string squareOrderID)
+        /// <returns>A list of the Attendee records that were added to the database.</returns>
+        private List<Attendee> addTicketItemsToDataBase(List<RegistrationViewModel> items, string squareOrderID)
         {
-            
+            List<Attendee> addedAttendees = [];
             foreach (var item in items)
             {
                 if(item.TicketComp is not null)
@@ -521,6 +536,8 @@ namespace KiCData.Services
                     break;
                 }
             
+                // Attempt to match the registration to an existing member.
+                // Create a new member record if a match is not found.
                 Member? member = _context.Members
                     .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
                     .FirstOrDefault();
@@ -549,12 +566,8 @@ namespace KiCData.Services
                         Attendee = null,
                     };
 
-                    _context.Members.Add(member);
+                    member = _context.Members.Add(member).Entity;
                     _context.SaveChanges();
-
-                    member = _context.Members
-                        .Where(m => m.FirstName == item.FirstName && m.LastName == item.LastName && m.DateOfBirth == item.DateOfBirth)
-                        .First();
                 }
 
                 Ticket ticket = new Ticket
@@ -593,9 +606,11 @@ namespace KiCData.Services
                 ticket.Attendee = attendee;
 
                 _context.Ticket.Add(ticket);
-                _context.Attendees.Add(attendee);
+                addedAttendees.Add(_context.Attendees.Add(attendee).Entity);
                 _context.SaveChanges();
             }
+
+            return addedAttendees;
         }
 
         /// <summary>
@@ -603,7 +618,7 @@ namespace KiCData.Services
         /// </summary>
         /// <param name="item">The registration view model containing attendee and ticket information.</param>
         /// <param name="squareOrderID">The Square Order ID associated with the ticket.</param>
-        private void addCompedTicketItemToDataBase(RegistrationViewModel item, string squareOrderID)
+        private Attendee addCompedTicketItemToDataBase(RegistrationViewModel item, string squareOrderID)
         {
             TicketComp ticketComp = _context.TicketComp
                 .Where(tc => tc.Id == item.TicketComp.Id)
@@ -687,6 +702,7 @@ namespace KiCData.Services
             ticketComp.TicketId = ticket.Id;
 
             _context.SaveChanges();
+            return attendee;
         }
 
         /// <summary>
@@ -733,6 +749,17 @@ namespace KiCData.Services
             });            
         }
 
+        public List<Attendee> SetAttendeesPaid(List<Attendee> attendees)
+        {
+            foreach (Attendee attendee in attendees)
+            {
+                attendee.IsPaid = true;
+                _context.Update(attendee);
+            }
+            _context.SaveChanges();
+            return attendees;
+        }
+
         /// <summary>
         /// Handles non-ticket order items.
         /// </summary>
@@ -774,6 +801,12 @@ namespace KiCData.Services
 
         #region CURE Payment Methods
 
+        public string CreateCUREPayment(string cardToken, BillingContact billingContact,
+            List<RegistrationViewModel> items)
+        {
+            return CreateCUREPayment(cardToken, billingContact, items, out var attendees);
+        }
+        
         /// <summary>
         /// Creates a payment for CURE event tickets.
         /// </summary>
@@ -781,13 +814,13 @@ namespace KiCData.Services
         /// <param name="billingContact">Billing contact information.</param>
         /// <param name="items">List of registrations.</param>
         /// <returns>Payment status as string.</returns>
-        public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items)
+        public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items, out List<Attendee> attendees)
         {
             double itemPrice = getTotalPrice(items);
 
             var result = createCUREPayment(cardToken, billingContact, itemPrice);
 
-            addTicketItemsToDataBase(items, result.Payment.OrderId);
+            attendees = addTicketItemsToDataBase(items, result.Payment.OrderId);
 
             return result.Payment.Status;
         }
@@ -819,12 +852,14 @@ namespace KiCData.Services
             return result;
         }
         
-        public void HandleNonPaymentCURETicketOrder(List<RegistrationViewModel> registrationViewModels)
+        public List<Attendee> HandleNonPaymentCURETicketOrder(List<RegistrationViewModel> registrationViewModels)
         {
+            List<Attendee> attendees = [];
             foreach(RegistrationViewModel rvm in registrationViewModels)
             {
-                addCompedTicketItemToDataBase(rvm, Guid.NewGuid().ToString());
+                attendees.Add(addCompedTicketItemToDataBase(rvm, Guid.NewGuid().ToString()));
             }
+            return  attendees;
         }
         #endregion
 
