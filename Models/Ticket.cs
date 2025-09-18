@@ -52,8 +52,6 @@ namespace KiCData.Models
         public string? AuthorizingUser { get; set; }
 
         public double? CompPct { get; set; }
-        
-        public int? RemainingRedemptions{ get; set; }
 
     }
 }
