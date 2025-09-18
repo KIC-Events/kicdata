@@ -9,6 +9,7 @@ using Square.Models;
 using System.Xml;
 using KiCData.Exceptions;
 using Square.Exceptions;
+using System.Diagnostics;
 
 namespace KiCData.Services
 {
@@ -403,6 +404,12 @@ namespace KiCData.Services
                 string? orderID = "Full comp: " + rvm.DiscountCode;
 
                 return orderID;
+            }
+            catch(InvalidOperationException ex)
+            {
+                string? orderId = "Missing, please contact technology@kicevents.com for help.";
+                _logger.Log(new UnreachableException("Missing order ID."));
+                return orderId;
             }
         }
         #endregion
