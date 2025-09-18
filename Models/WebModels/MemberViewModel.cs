@@ -112,9 +112,9 @@ namespace KiCData.Models.WebModels
 		public double Price { get; set; }
 		
 		public string Type { get; set; } = "Ticket";
-		
+
 		[Display(Name = "Decadent Delights")]
-		public bool? HasMealAddon { get; set; }
+		public bool HasMealAddon { get; set; }
 		
 		public TicketAddon? MealAddon { get; set; }
 		
