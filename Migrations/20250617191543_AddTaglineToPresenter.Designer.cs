@@ -4,6 +4,7 @@ using KiCData.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KiCData.Migrations
 {
     [DbContext(typeof(KiCdbContext))]
-    partial class KiCdbContextModelSnapshot : ModelSnapshot
+    [Migration("20250617191543_AddTaglineToPresenter")]
+    partial class AddTaglineToPresenter
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -285,6 +288,9 @@ namespace KiCData.Migrations
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("longtext");
 
+                    b.Property<int?>("PresenterId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("PublicId")
                         .HasColumnType("int");
 
@@ -298,6 +304,8 @@ namespace KiCData.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PresenterId");
 
                     b.HasIndex("VendorId");
 
@@ -361,12 +369,17 @@ namespace KiCData.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int>("PresenterId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Type")
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
                     b.HasIndex("EventId");
+
+                    b.HasIndex("PresenterId");
 
                     b.ToTable("Presentation");
                 });
@@ -394,9 +407,6 @@ namespace KiCData.Migrations
                     b.Property<DateOnly?>("LastAttended")
                         .HasColumnType("date");
 
-                    b.Property<int?>("MemberId")
-                        .HasColumnType("int");
-
                     b.Property<string>("PublicName")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -409,69 +419,7 @@ namespace KiCData.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MemberId");
-
                     b.ToTable("Presenter");
-                });
-
-            modelBuilder.Entity("KiCData.Models.PresenterSocial", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Handle")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Platform")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("PresenterId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PresenterId");
-
-                    b.ToTable("PresenterSocial");
-                });
-
-            modelBuilder.Entity("KiCData.Models.Sponsor", b =>
-                {
-                    b.Property<int?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int?>("Id"));
-
-                    b.Property<string>("Bio")
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("EventId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ImgPath")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("PublicName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Tagline")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("WebsiteUrl")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EventId");
-
-                    b.ToTable("Sponsor");
                 });
 
             modelBuilder.Entity("KiCData.Models.Staff", b =>
@@ -630,12 +578,6 @@ namespace KiCData.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Tagline")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("WebsiteUrl")
-                        .HasColumnType("longtext");
-
                     b.HasKey("Id");
 
                     b.ToTable("Vendor");
@@ -725,21 +667,6 @@ namespace KiCData.Migrations
                     b.ToTable("WaitList");
                 });
 
-            modelBuilder.Entity("PresentationPresenter", b =>
-                {
-                    b.Property<int>("PresentationsId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PresentersId")
-                        .HasColumnType("int");
-
-                    b.HasKey("PresentationsId", "PresentersId");
-
-                    b.HasIndex("PresentersId");
-
-                    b.ToTable("PresentationPresenter");
-                });
-
             modelBuilder.Entity("GroupUser", b =>
                 {
                     b.HasOne("KiCData.Models.Group", null)
@@ -815,9 +742,15 @@ namespace KiCData.Migrations
 
             modelBuilder.Entity("KiCData.Models.Member", b =>
                 {
+                    b.HasOne("KiCData.Models.Presenter", "Presenter")
+                        .WithMany("Members")
+                        .HasForeignKey("PresenterId");
+
                     b.HasOne("KiCData.Models.Vendor", "Vendor")
                         .WithMany("Members")
                         .HasForeignKey("VendorId");
+
+                    b.Navigation("Presenter");
 
                     b.Navigation("Vendor");
                 });
@@ -841,38 +774,15 @@ namespace KiCData.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Event");
-                });
-
-            modelBuilder.Entity("KiCData.Models.Presenter", b =>
-                {
-                    b.HasOne("KiCData.Models.Member", "Member")
-                        .WithMany()
-                        .HasForeignKey("MemberId");
-
-                    b.Navigation("Member");
-                });
-
-            modelBuilder.Entity("KiCData.Models.PresenterSocial", b =>
-                {
                     b.HasOne("KiCData.Models.Presenter", "Presenter")
-                        .WithMany("Socials")
+                        .WithMany()
                         .HasForeignKey("PresenterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Presenter");
-                });
-
-            modelBuilder.Entity("KiCData.Models.Sponsor", b =>
-                {
-                    b.HasOne("KiCData.Models.Event", "Event")
-                        .WithMany()
-                        .HasForeignKey("EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Event");
+
+                    b.Navigation("Presenter");
                 });
 
             modelBuilder.Entity("KiCData.Models.Staff", b =>
@@ -933,21 +843,6 @@ namespace KiCData.Migrations
                     b.Navigation("Attendee");
                 });
 
-            modelBuilder.Entity("PresentationPresenter", b =>
-                {
-                    b.HasOne("KiCData.Models.Presentation", null)
-                        .WithMany()
-                        .HasForeignKey("PresentationsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("KiCData.Models.Presenter", null)
-                        .WithMany()
-                        .HasForeignKey("PresentersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("KiCData.Models.Event", b =>
                 {
                     b.Navigation("Tickets");
@@ -966,7 +861,7 @@ namespace KiCData.Migrations
 
             modelBuilder.Entity("KiCData.Models.Presenter", b =>
                 {
-                    b.Navigation("Socials");
+                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("KiCData.Models.Ticket", b =>

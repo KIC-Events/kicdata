@@ -6,6 +6,7 @@ using KiCData.Models;
 using Microsoft.Extensions.Configuration;
 using System.Xml.Serialization;
 using MySqlConnector;
+using Microsoft.Extensions.Configuration;          
 
 namespace KiCData.Models
 {
@@ -17,7 +18,9 @@ namespace KiCData.Models
         public DbSet<Volunteer> Volunteers { get; set; }
         public DbSet<Member> Members { get; set; }
         public DbSet<Event> Events { get; set; }
+        public DbSet<Sponsor> Sponsors { get; set; }
         public DbSet<Presenter> Presenters { get; set; }
+        public DbSet<PresenterSocial> PresenterSocials { get; set; }
         public DbSet<Presentation> Presentations { get; set; }
         public DbSet<ClubMember> ClubMembers { get; set; }
         public DbSet<Attendee> Attendees { get; set; }
@@ -36,7 +39,13 @@ namespace KiCData.Models
 
         public KiCdbContext(DbContextOptions<KiCdbContext> options) : base(options)
         {
-
+            if (_config == null)
+            {
+                _config = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                    .Build();
+            }
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

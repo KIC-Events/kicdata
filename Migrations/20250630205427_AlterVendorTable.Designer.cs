@@ -4,6 +4,7 @@ using KiCData.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KiCData.Migrations
 {
     [DbContext(typeof(KiCdbContext))]
-    partial class KiCdbContextModelSnapshot : ModelSnapshot
+    [Migration("20250630205427_AlterVendorTable")]
+    partial class AlterVendorTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -440,40 +443,6 @@ namespace KiCData.Migrations
                     b.ToTable("PresenterSocial");
                 });
 
-            modelBuilder.Entity("KiCData.Models.Sponsor", b =>
-                {
-                    b.Property<int?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int?>("Id"));
-
-                    b.Property<string>("Bio")
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("EventId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ImgPath")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("PublicName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Tagline")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("WebsiteUrl")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EventId");
-
-                    b.ToTable("Sponsor");
-                });
-
             modelBuilder.Entity("KiCData.Models.Staff", b =>
                 {
                     b.Property<int?>("Id")
@@ -862,17 +831,6 @@ namespace KiCData.Migrations
                         .IsRequired();
 
                     b.Navigation("Presenter");
-                });
-
-            modelBuilder.Entity("KiCData.Models.Sponsor", b =>
-                {
-                    b.HasOne("KiCData.Models.Event", "Event")
-                        .WithMany()
-                        .HasForeignKey("EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Event");
                 });
 
             modelBuilder.Entity("KiCData.Models.Staff", b =>

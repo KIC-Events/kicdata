@@ -5,14 +5,22 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageID>KICData</PackageID>
-    <Version>1.4.2</Version>
+    <Version>1.5.3</Version>
     <Authors>Malechus, mgallagjr</Authors>
     <Company>KIC Events LLC</Company>
     <PackageDescription>A collection of models and data interfaces for KIC Events projects.</PackageDescription>
     <RepositoryURL>https://github.com/KIC-Events/kicdata</RepositoryURL>
   </PropertyGroup>
 
+<ItemGroup>
+  <None Update="appsettings.json">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
+
   <ItemGroup>
+    <PackageReference Include="AWSSDK.SimpleEmail" Version="4.0.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
     <PackageReference Include="MailKit" Version="4.8.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.2.0" />
@@ -26,7 +34,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="MimeKit" Version="4.8.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />

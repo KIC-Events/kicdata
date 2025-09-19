@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using KiCData.Models;
+using KiCData.Models.WebModels.PurchaseModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace KiCData.Models.WebModels
@@ -13,49 +14,65 @@ namespace KiCData.Models.WebModels
 	{
 
 		[Required(ErrorMessage = "Please enter your legal first name.")]
-		[Display(Name = "Legal First Name (as it appears on your ID)")]
+		[Display(Name = "Legal First Name", Description = "As it appears on your ID")]
 		public string? FirstName { get; set; }
 
 		[Required(ErrorMessage = "Please enter your legal last name.")]
-		[Display(Name = "Legal Last Name (as it appears on your ID)")]
+		[Display(Name = "Legal Last Name", Description = "As it appears on your ID")]
 		public string? LastName { get; set; }
 
 		[Required(ErrorMessage = "Please enter your email address.")]
-		[Display(Name = "Email Address")]
+		[EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+		[Display(Name = "Email Address", Description = "We’ll never share your email address with anyone else.", Prompt = "you@example.com")]
 		public string? Email { get; set; }
 
 		[Required(ErrorMessage = "Please enter your birthday")]
 		[Display(Name = "Date of Birth")]
 		public DateOnly? DateOfBirth { get; set; }
 
-		[Display(Name = "Fetlife Profile Name (Optional)")]
+		[Display(Name = "Fetlife Profile Name")]
 		public string? FetName { get; set; }
 
-		[Display(Name = @"If you are a member of Club425, where our monthly parties are held, please enter your member number here. (This number was provided on registration.)")]
+		[Display(Name = "Club425 Member Number", Description = "If you are a member of Club425, where our monthly parties are held, please enter your member number here (this number was provided on registration).")]
 		public int? ClubId { get; set; }
 
-		[Display(Name = @"Phone Number (Optional)")]
+		[Display(Name = "Phone Number")]
 		public string? PhoneNumber { get; set; }
 
-		[Display(Name = "Additional Information")]
+		[Display(Name = "Additional Information", Prompt = "Please provide any additional information you would like us to know.")]
 		public string? AdditionalInfo { get; set; }
 
 		[Required]
-		[Display(Name = "The sex listed on your ID card. This is used for background check purposes only. KIC Events is an inclusive organization that welcomes all participants without regards to gender or sex.")]
+		[Display(Name = "Sex Listed on Your ID", Description = "This is used for background check purposes only. KIC Events is an all-inclusive organization that welcomes all participants without regards to gender or sex.")]
 		public string? SexOnID { get; set; }
 	}
 
-	public class RegistrationViewModel : AttendeeViewModel
+	public class RegistrationViewModel : AttendeeViewModel, IPurchaseModel
 	{
+    	public Guid RegId { get; set; }
+		
 		[Required]
-		[Display(Name = "Ticket Level")]
+		[Display(Name = "Ticket Type", Description = "Please select the type of ticket")]
 		public string? TicketType { get; set; }
+
+		public string? TicketId { get; set; }
 
 		public List<SelectListItem>? TicketTypes { get; set; }
 
+		[Required]
+		[Display(Name = "Select Room Type")]
 		public string? RoomType { get; set; }
 
 		public List<SelectListItem>? RoomTypes { get; set; }
+
+		[Required]
+		[Display(Name = "Arrival Day")]
+		public string? ArrivalDay { get; set; }
+
+		public List<SelectListItem>? ArrivalDays { get; set; }
+
+
+		public string? ArrivalDayOther { get; set; }
 
 		[Required]
 		[Display(Name = "Check this if you would like to reserve a room at the host hotel.")]
@@ -65,9 +82,12 @@ namespace KiCData.Models.WebModels
 		[Display(Name = "Check here if you are interested in volunteering at the event.")]
 		public bool WillVolunteer = false;
 
-		[Required]
-		[Display(Name = "Re-enter your email address to confirm.")]
-		public string EmailConf { get; set; }
+		[Required(ErrorMessage = "Please confirm your email address.")]
+    	[Compare(nameof(Email), ErrorMessage = "Email addresses must match.")]
+    	[Display(Name = "Confirm Email",
+             Description = "Re-enter your email to confirm.",
+             Prompt = "you@example.com")]
+    	public string? EmailConf { get; set; }
 
 		public bool CreateMore { get; set; }
 
@@ -89,7 +109,16 @@ namespace KiCData.Models.WebModels
 
 		public Event? Event { get; set; }
 
-		public int? Price { get; set; }
+		public double Price { get; set; }
+		
+		public string Type { get; set; } = "Ticket";
+
+		[Display(Name = "Decadent Delights")]
+		public bool HasMealAddon { get; set; }
+		
+		public TicketAddon? MealAddon { get; set; }
+		
+		
 	}
 
 	public class VolunteerPositionSelection
