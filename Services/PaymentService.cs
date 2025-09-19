@@ -364,7 +364,7 @@ namespace KiCData.Services
 
             TicketAddon ticketAddon = new TicketAddon();
             ticketAddon.Name = "Decadent Delights";
-            ticketAddon.Price = (double)catObj.ItemData.Variations.First().ItemVariationData.PriceMoney.Amount;
+            ticketAddon.Price = (double)catObj.ItemData.Variations.First().ItemVariationData.PriceMoney.Amount / 100.00; //Square stores all money amounts in cents, so we must divide by 100 to get correct amount in dollars.
             ticketAddon.SquareID = catObj.Id;
 
             return ticketAddon;
