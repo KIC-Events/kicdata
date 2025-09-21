@@ -14,6 +14,7 @@ namespace KiCData.Models
         public int? Stock{ get; set; }
         public string? ImgPath{ get; set; }
         public string? Description{ get; set; }
+        public bool? IsActive{ get; set; }
         
         [NotMapped]
         public int? PriceInDollars
