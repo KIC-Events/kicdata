@@ -1,4 +1,4 @@
-using KiCData.Models.WebModels.PurchaseModels;
+
 
 namespace KiCData.Models.WebModels.PaymentModels
 {
@@ -8,9 +8,9 @@ namespace KiCData.Models.WebModels.PaymentModels
         
         public string? CardToken { get; set; }
         
-        public List<IPurchaseModel>? Items { get; set; }
+        public List<InventoryItem>? Items { get; set; }
         
-        public CardFormModel(BillingContact billingContact, string? cardToken, List<IPurchaseModel>? items)
+        public CardFormModel(BillingContact billingContact, string? cardToken, List<InventoryItem>? items)
         {
             BillingContact = billingContact;
             CardToken = cardToken;
@@ -21,7 +21,7 @@ namespace KiCData.Models.WebModels.PaymentModels
         {
             BillingContact = new BillingContact();
             CardToken = null;
-            Items = new List<IPurchaseModel>();
+            Items = new List<InventoryItem>();
         }
     }
 }

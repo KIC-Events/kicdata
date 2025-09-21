@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using KiCData.Models;
-using KiCData.Models.WebModels.PurchaseModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace KiCData.Models.WebModels
@@ -47,7 +46,7 @@ namespace KiCData.Models.WebModels
 		public string? SexOnID { get; set; }
 	}
 
-	public class RegistrationViewModel : AttendeeViewModel, IPurchaseModel
+	public class RegistrationViewModel : AttendeeViewModel
 	{
     	public Guid RegId { get; set; }
 		
@@ -116,7 +115,7 @@ namespace KiCData.Models.WebModels
 		[Display(Name = "Decadent Delights")]
 		public bool HasMealAddon { get; set; }
 		
-		public TicketAddon? MealAddon { get; set; }
+		public InventoryItem? MealAddon { get; set; }
 		
 		
 	}

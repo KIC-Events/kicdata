@@ -1,4 +1,4 @@
-using KiCData.Models.WebModels.PurchaseModels;
+
 
 namespace KiCData.Models.WebModels.PaymentModels
 {
@@ -6,7 +6,7 @@ namespace KiCData.Models.WebModels.PaymentModels
     {
         public new List<RegistrationViewModel> Items { get; set; }
         
-        public CureCardFormModel(BillingContact billingContact, string? cardToken, List<IPurchaseModel>? items)
+        public CureCardFormModel(BillingContact billingContact, string? cardToken, List<InventoryItem>? items)
             : base(billingContact, cardToken, items)
         {
         }
