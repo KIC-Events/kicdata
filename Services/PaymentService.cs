@@ -835,6 +835,9 @@ namespace KiCData.Services
         {
             double itemPrice = getTotalPrice(items);
 
+            var salesTax = itemPrice * 0.08;
+            itemPrice = itemPrice + salesTax;
+
             var result = createCUREPayment(cardToken, billingContact, itemPrice);
 
             attendees = addTicketItemsToDataBase(items, result.Payment.OrderId);
