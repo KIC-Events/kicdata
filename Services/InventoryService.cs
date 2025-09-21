@@ -55,8 +55,7 @@ namespace KiCData.Services
         /// <returns>A list of InventoryItem objects.</returns>
         public async Task<List<InventoryItem>> GetItemInventoryAsync(string itemType)
         {
-            var response = await Task.Run(() => getItemInventory(itemType));
-            return response;
+            return await Task.Run(() => getItemInventory(itemType));
         }
         
         /// <summary>
