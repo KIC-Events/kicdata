@@ -1,4 +1,4 @@
-
+using System.ComponentModel.DataAnnotations;
 
 namespace KiCData.Models.WebModels.PaymentModels
 {
@@ -6,19 +6,40 @@ namespace KiCData.Models.WebModels.PaymentModels
     
     public class BillingContact
     {
-        public string[] AddressLines { get; set; }
-        public string FamilyName{ get; set; }
+        [Required]
+        [Display(Name = "Address Line 1")]
+        public string AddressLine1 { get; set; }
+
+        [Display(Name = "Address Line 2")]
+        public string AddressLine2 { get; set; }
+
+        [Required]
+        [Display(Name = "Last Name")]
+        public string FamilyName { get; set; }
+
+        [Required]
+        [Display(Name = "First Name")]
         public string GivenName { get; set; }
+
+        [Required]
+        [Display(Name = "Email")]
+        [EmailAddress]
         public string EmailAddress { get; set; }
         public string CountryCode { get; set; }
+
+        [Required]
+        [Display(Name = "Phone Number")]
         public string PhoneNumber { get; set; }
         public string State { get; set; }
         public string City { get; set; }
+
+        [Display(Name = "Zip")]
         public string PostalCode { get; set; }
         
-        public BillingContact(string[] addressLines, string familyName, string givenName, string emailAddress, string countryCode, string phoneNumber, string state, string city, string postalCode)
+        public BillingContact(string addressLine1, string addressLine2, string familyName, string givenName, string emailAddress, string countryCode, string phoneNumber, string state, string city, string postalCode)
         {
-            AddressLines = addressLines;
+            AddressLine1 = addressLine1;
+            AddressLine2 = addressLine2;
             FamilyName = familyName;
             GivenName = givenName;
             EmailAddress = emailAddress;
@@ -31,7 +52,8 @@ namespace KiCData.Models.WebModels.PaymentModels
         
         public BillingContact()
         {
-            AddressLines = Array.Empty<string>();
+            AddressLine1 = string.Empty;
+            AddressLine2 = string.Empty;
             FamilyName = string.Empty;
             GivenName = string.Empty;
             EmailAddress = string.Empty;

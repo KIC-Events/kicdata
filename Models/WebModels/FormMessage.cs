@@ -1,17 +1,18 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace KiCData.Models.WebModels
 {
     public class FormMessage
     {
-        public List<string>? To { get; set; }
+        public List<string>? To { get; set; } = new();
 
-        public List<string>? Cc { get; set; }
+        public List<string>? Cc { get; set; } = new();
 
-        public List<string>? Bcc { get; set; }
+        public List<string>? Bcc { get; set; } = new();
 
-        public string From { get; set; }
+        public string From { get; set; } = "mailer-daemon@kicevents.com";
 
         public string? Subject { get; set; }
 
@@ -19,20 +20,9 @@ namespace KiCData.Models.WebModels
 
         public string? Text { get; set; }
 
-        public StringBuilder? HtmlBuilder { get; set; }
+        public StringBuilder? HtmlBuilder { get; set; } = new();
 
-        public string Sender { get; set; }
-
-        public FormMessage()
-        {
-            To = new List<string>();
-            Cc = new List<string>();
-            Bcc = new List<string>();
-            HtmlBuilder = new StringBuilder();
-            From = "mailer-daemon@kicevents.com";
-            Sender = "mailer-daemon@kicevents.com";
-            Cc.Add("technology@kicevents.com");
-        }
+        public string Sender { get; set; } = "mailer-daemon@kicevents.com";
 
         public void BuildHtml()
         {
