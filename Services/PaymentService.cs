@@ -122,6 +122,11 @@ namespace KiCData.Services
                     price = price - compAmt;
                 }
                 
+                if(rvm.HasMealAddon)
+                {
+                    price = price + (double)rvm.MealAddon.PriceInDollars;
+                }
+                
                 totalPrice += price;
             }
 
@@ -292,6 +297,7 @@ namespace KiCData.Services
             ticket.Event = e;
             ticket.EventId = e.Id;
             ticket.Price = item.Price;
+            ticket.HasMealAddon = item.HasMealAddon;
             
             if(ticketComp.CompPct == 100)
             {
