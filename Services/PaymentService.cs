@@ -9,6 +9,7 @@ using System.Xml;
 using KiCData.Exceptions;
 using Square.Exceptions;
 using System.Diagnostics;
+using Order = Square.Models.Order;
 
 namespace KiCData.Services
 {
