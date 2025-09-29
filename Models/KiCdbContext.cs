@@ -35,6 +35,7 @@ namespace KiCData.Models
         public DbSet<Group> Groups { get; set; }
         public DbSet<PendingVolunteer> PendingVolunteers { get; set; }
         public DbSet<InventoryItem> InventoryItems { get; set; }
+        public DbSet<Order> Orders { get; set; }
 
 
 
