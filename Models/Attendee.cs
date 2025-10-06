@@ -41,6 +41,8 @@ namespace KiCData.Models
         public string? PaymentLinkID { get; set; }
 
         public bool isRegistered { get; set; }
+        
+        public DateTime? RegistrationConfirmationEmailTimestamp { get; set; }
     }
 
 

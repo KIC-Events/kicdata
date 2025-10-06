@@ -9,6 +9,7 @@ using System.Xml;
 using KiCData.Exceptions;
 using Square.Exceptions;
 using System.Diagnostics;
+using Order = Square.Models.Order;
 
 namespace KiCData.Services
 {
@@ -417,10 +418,29 @@ namespace KiCData.Services
         public string CreateCUREPayment(string cardToken, BillingContact billingContact, List<RegistrationViewModel> items, out List<Attendee> attendees)
         {
             double itemPrice = getTotalPrice(items);
+            var subtotal = (int)(itemPrice * 100);
+
+            var salesTax = itemPrice * 0.08;
+            itemPrice += salesTax;
 
             var result = createCUREPayment(cardToken, billingContact, itemPrice);
 
-            attendees = addTicketItemsToDataBase(items, result.Payment.OrderId);
+            var payments = (int)result.Payment.AmountMoney.Amount.GetValueOrDefault();
+            var orderId = result.Payment.OrderId;
+            var order = new Models.Order
+            {
+                SquareOrderId = orderId,
+                OrderDate = DateTime.UtcNow,
+                ItemsTotal = subtotal,
+                SubTotal = subtotal,
+                Taxes = (int)(salesTax * 100),
+                GrandTotal = (int)(itemPrice * 100),
+                PaymentsTotal = payments
+            };
+            _context.Orders.Add(order);
+            _context.SaveChanges();
+
+            attendees = addTicketItemsToDataBase(items, orderId);
 
             return result.Payment.Status;
         }
@@ -460,6 +480,23 @@ namespace KiCData.Services
                 attendees.Add(addCompedTicketItemToDataBase(rvm, Guid.NewGuid().ToString()));
             }
             return  attendees;
+        }
+
+        public string? GetPaymentMethodForOrder(string orderId)
+        {
+            var orderResponse = _client.OrdersApi.RetrieveOrder(orderId);
+            if (orderResponse.Order != null)
+            {
+                var paymentId = orderResponse.Order.Tenders.First().PaymentId;
+                var paymentResponse = _client.PaymentsApi.GetPayment(paymentId);
+                if (paymentResponse.Payment != null)
+                {
+                    var cardBrand = paymentResponse.Payment.CardDetails.Card.CardBrand ?? "";
+                    var last4 = paymentResponse.Payment.CardDetails.Card.Last4 ?? "";
+                    return $"{cardBrand} {last4}";
+                }
+            }
+            return null;
         }
         #endregion
 

@@ -112,17 +112,17 @@ namespace KiCData.Services
         /// <param name="registrationViewModels">List of registration view models.</param>
         /// <param name="increment">If true, increases inventory; otherwise, decreases inventory.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public Task AdjustInventoryAsync(List<RegistrationViewModel> registrationViewModels, bool increment = false)
+        public void AdjustInventory(List<RegistrationViewModel> registrationViewModels, bool increment = false)
         {
-            if (increment) return Task.Run(() => increaseInventory(registrationViewModels));
-            else return Task.Run(() => reduceInventory(registrationViewModels));
+            if (increment) increaseInventory(registrationViewModels);
+            else reduceInventory(registrationViewModels);
         }
         
         /// <summary>
         /// Internal asynchronous method to reduce inventory for a list of registrations.
         /// </summary>
         /// <param name="registrationViewModels">List of registration view models.</param>
-        private async void reduceInventory(List<RegistrationViewModel> registrationViewModels)
+        private void reduceInventory(List<RegistrationViewModel> registrationViewModels)
         {
             foreach(RegistrationViewModel rvm in registrationViewModels)
             {
