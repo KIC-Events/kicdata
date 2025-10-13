@@ -1,6 +1,6 @@
 ﻿using Amazon;
-using Amazon.SimpleEmail;
-using Amazon.SimpleEmail.Model;
+using Amazon.SimpleEmailV2;
+using Amazon.SimpleEmailV2.Model;
 using KiCData.Models.WebModels;
 using Microsoft.Extensions.Configuration;
 
@@ -10,14 +10,14 @@ namespace KiCData.Services
     {
         private readonly IConfigurationRoot _config;
         private readonly IKiCLogger _logger;
-        private readonly AmazonSimpleEmailServiceClient _client;
+        private readonly AmazonSimpleEmailServiceV2Client _client;
 
         public SESEmailService(IConfigurationRoot config, IKiCLogger logger)
         {
             this._config = config;
             this._logger = logger;
             var awsRegion = RegionEndpoint.GetBySystemName(config["AWS:Region"]);
-            this._client = new AmazonSimpleEmailServiceClient(config["AWS:AccessKey"], config["AWS:SecretKey"], awsRegion);
+            this._client = new AmazonSimpleEmailServiceV2Client(config["AWS:AccessKey"], config["AWS:SecretKey"], awsRegion);
         }
 
         /// <summary>
@@ -69,34 +69,54 @@ namespace KiCData.Services
                 CcAddresses = ccAddresses,
                 ToAddresses = toAddresses
             };
-            var msg = new Message
+
+            Content? htmlContent = null;
+            if (message.Html != null)
             {
-                Subject = new Content
+                htmlContent = new Content
                 {
                     Charset = "UTF-8",
-                    Data = message.Subject
-                },
-                Body = new Body
+                    Data = message.Html
+                };
+            }
+            Content? plaintextContent = null;
+            if (message.Text != null)
+            {
+                plaintextContent = new Content
                 {
-                    Html = new Content
+                    Charset = "UTF-8",
+                    Data = message.Text
+                };
+            }
+
+            var content = new EmailContent
+            {
+                Simple = new Message
+                {
+                    Subject = new Content
                     {
                         Charset = "UTF-8",
-                        Data = message.Html
+                        Data = message.Subject
+                    },
+                    Body = new Body
+                    {
+                        Html = htmlContent,
+                        Text = plaintextContent
                     }
                 }
             };
             var req = new SendEmailRequest
             {
                 Destination = dest,
-                Message = msg,
-                Source = message.From
+                Content = content,
+                FromEmailAddress = message.From
             };
             try
             {
                 _client.SendEmailAsync(req, CancellationToken.None).Wait();
                 _logger.LogText("Message sent...");
             }
-            catch (AmazonSimpleEmailServiceException e)
+            catch (AmazonSimpleEmailServiceV2Exception e)
             {
                 _logger.LogText("An error occured while sending email. See the exception below for details.");
                 _logger.LogText(e.Message);
