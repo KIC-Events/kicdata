@@ -9,9 +9,12 @@ namespace KiCData.Factories
     {
         public KiCdbContext CreateDbContext(string[] args)
         {
+            string env = "Development";
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production") env = "Production";
             var config = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile($"appsettings.json", optional: false)
+                .AddJsonFile($"appsettings.{env}.json", optional: false)
                 .Build();
 
             var connectionString = config["Database:ConnectionString"];

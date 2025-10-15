@@ -5,11 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageID>KICData</PackageID>
-    <Version>1.5.6.2</Version>
+    <Version>1.5.7.1</Version>
     <Authors>Malechus, mgallagjr</Authors>
     <Company>KIC Events LLC</Company>
     <PackageDescription>A collection of models and data interfaces for KIC Events projects.</PackageDescription>
     <RepositoryURL>https://github.com/KIC-Events/kicdata</RepositoryURL>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
 <ItemGroup>
@@ -19,7 +21,7 @@
 </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.SimpleEmail" Version="4.0.1.1" />
+    <PackageReference Include="AWSSDK.SimpleEmailV2" Version="4.0.5.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
     <PackageReference Include="MailKit" Version="4.8.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
@@ -40,6 +42,12 @@
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
     <PackageReference Include="Square" Version="38.1.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.AspNetCore.Mvc.Razor">
+      <HintPath>..\..\..\.dotnet\packs\Microsoft.AspNetCore.App.Ref\8.0.17\ref\net8.0\Microsoft.AspNetCore.Mvc.Razor.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
