@@ -13,6 +13,7 @@ namespace KiCData.Factories
             if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production") env = "Production";
             var config = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile($"appsettings.json", optional: false)
                 .AddJsonFile($"appsettings.{env}.json", optional: false)
                 .Build();
 

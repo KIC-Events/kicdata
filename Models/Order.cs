@@ -8,7 +8,7 @@ public class Order
 {
     [Key]
     public int? Id { get; set; }
-    [MaxLength(50)]
+    [MaxLength(100)]
     public string? SquareOrderId { get; set; }
     public DateTime OrderDate { get; set; }
     public int ItemsTotal { get; set; }
