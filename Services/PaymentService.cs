@@ -80,7 +80,8 @@ namespace KiCData.Services
             try
             {
                 string? orderID = _context.Attendees
-                .Where(a => a.BadgeName == rvm.BadgeName
+                .Where(a => a.Member.FirstName == rvm.FirstName
+                    && a.Member.LastName == rvm.LastName
                     && a.Ticket.EventId == int.Parse(_config["CUREID"]))
                 .FirstOrDefault()
                 .OrderID;
@@ -339,7 +340,8 @@ namespace KiCData.Services
                     {
                         Attendee attendee = _context.Attendees
                         .Where(a => a.Ticket.EventId == int.Parse(_config["CUREID"])
-                        && a.BadgeName == rvm.BadgeName)
+                        && a.Member.FirstName == rvm.FirstName
+                        && a.Member.LastName == rvm.LastName)
                         .First();
 
                         attendee.IsPaid = true;
